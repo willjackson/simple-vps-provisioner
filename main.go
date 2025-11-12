@@ -19,7 +19,7 @@ func main() {
 	cfg := &types.Config{}
 
 	// Define flags
-	flag.StringVar(&cfg.Mode, "mode", "setup", "Operation mode: setup, verify")
+	flag.StringVar(&cfg.Mode, "mode", "setup", "Operation mode: setup, verify, update")
 	flag.StringVar(&cfg.CMS, "cms", "drupal", "CMS to install: drupal or wordpress")
 	flag.StringVar(&cfg.PHPVersion, "php-version", "8.3", "PHP version to install")
 	flag.StringVar(&cfg.PrimaryDomain, "domain", "", "Primary domain name (required for setup)")
@@ -55,10 +55,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -extra-domains 'staging.example.com,dev.example.com'\n\n")
 		fmt.Fprintf(os.Stderr, "  # Deploy from Git repository:\n")
 		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -git-repo https://github.com/org/repo.git -git-branch main\n\n")
+		fmt.Fprintf(os.Stderr, "  # Install with database import:\n")
+		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -db /path/to/database.sql.gz\n\n")
 		fmt.Fprintf(os.Stderr, "  # Install with SSL/HTTPS:\n")
 		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -le-email admin@example.com\n\n")
 		fmt.Fprintf(os.Stderr, "  # Verify system configuration:\n")
 		fmt.Fprintf(os.Stderr, "  svp -mode verify\n\n")
+		fmt.Fprintf(os.Stderr, "  # Check for and install updates:\n")
+		fmt.Fprintf(os.Stderr, "  svp -mode update\n\n")
 	}
 
 	// Parse flags
@@ -102,9 +106,12 @@ func main() {
 	case "verify":
 		err = cmd.Verify(cfg)
 
+	case "update":
+		err = cmd.Update(version)
+
 	default:
 		utils.Err("Unknown mode: %s", cfg.Mode)
-		utils.Err("Available modes: setup, verify")
+		utils.Err("Available modes: setup, verify, update")
 		os.Exit(1)
 	}
 

@@ -95,9 +95,9 @@ func FixSSLDocroot(domain, webroot string) error {
 		return fmt.Errorf("failed to read vhost config: %v", err)
 	}
 
-	// Check if SSL is configured
-	if !strings.Contains(content, "ssl_certificate") {
-		utils.Skip("SSL not configured yet, skipping docroot fix")
+	// Check if SSL is configured (look for 443 listener or ssl directives)
+	if !strings.Contains(content, "listen 443") && !strings.Contains(content, "listen [::]:443") {
+		utils.Skip("SSL not configured yet (no 443 listener), skipping docroot fix")
 		return nil
 	}
 
@@ -178,9 +178,9 @@ func EnhanceSSLConfig(domain string) error {
 		return nil
 	}
 
-	// Check if SSL is configured (look for ssl_certificate_key line)
-	if !strings.Contains(content, "ssl_certificate_key") {
-		utils.Warn("SSL not configured yet (no ssl_certificate_key found), skipping enhancement")
+	// Check if SSL is configured (look for 443 listener)
+	if !strings.Contains(content, "listen 443") && !strings.Contains(content, "listen [::]:443") {
+		utils.Warn("SSL not configured yet (no 443 listener), skipping enhancement")
 		return nil
 	}
 

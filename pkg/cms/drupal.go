@@ -387,17 +387,29 @@ func InstallDrupalSite(domain, projectDir, adminUser, dbImport string) error {
 			return fmt.Errorf("failed to parse database credentials")
 		}
 		
-		// Import database (handle .gz files)
-		var cmd string
-		if strings.HasSuffix(strings.ToLower(dbImport), ".gz") {
-			// Use zcat for compressed files
-			cmd = fmt.Sprintf("zcat < %s | mysql -u%s -p%s %s", dbImport, dbUser, dbPass, dbName)
-		} else {
-			// Direct import for .sql files
-			cmd = fmt.Sprintf("mysql -u%s -p%s %s < %s", dbUser, dbPass, dbName, dbImport)
+		// Drop existing database to ensure clean import
+		utils.Log("Dropping existing database %s...", dbName)
+		dropCmd := fmt.Sprintf("mysql -uroot -e 'DROP DATABASE IF EXISTS %s;'", dbName)
+		_, _ = utils.RunShell(dropCmd)
+		
+		// Recreate database
+		utils.Log("Recreating database %s...", dbName)
+		createCmd := fmt.Sprintf("mysql -uroot -e 'CREATE DATABASE %s CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'", dbName)
+		if _, err := utils.RunShell(createCmd); err != nil {
+			return fmt.Errorf("failed to recreate database: %v", err)
 		}
 		
-		_, err = utils.RunShell(cmd)
+		// Import database (handle .gz files)
+		var importCmd string
+		if strings.HasSuffix(strings.ToLower(dbImport), ".gz") {
+			// Use zcat for compressed files
+			importCmd = fmt.Sprintf("zcat < %s | mysql -u%s -p%s %s", dbImport, dbUser, dbPass, dbName)
+		} else {
+			// Direct import for .sql files
+			importCmd = fmt.Sprintf("mysql -u%s -p%s %s < %s", dbUser, dbPass, dbName, dbImport)
+		}
+		
+		_, err = utils.RunShell(importCmd)
 		if err != nil {
 			return fmt.Errorf("database import failed: %v", err)
 		}
