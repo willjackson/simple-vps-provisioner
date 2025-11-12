@@ -33,6 +33,7 @@ func main() {
 	flag.StringVar(&cfg.DBEngine, "db-engine", "mariadb", "Database engine: mariadb or none")
 	flag.StringVar(&cfg.CreateSwap, "create-swap", "auto", "Create swap: yes, no, or auto")
 	flag.BoolVar(&cfg.UFWEnable, "firewall", true, "Enable UFW firewall")
+	flag.BoolVar(&cfg.SSLEnable, "ssl", true, "Enable SSL/HTTPS with Let's Encrypt (requires -le-email)")
 	flag.BoolVar(&cfg.SwitchAll, "switch-all", false, "Switch all sites to new PHP version")
 	flag.BoolVar(&cfg.Debug, "debug", false, "Enable debug mode")
 
@@ -53,6 +54,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -extra-domains 'staging.example.com,dev.example.com'\n\n")
 		fmt.Fprintf(os.Stderr, "  # Deploy from Git repository:\n")
 		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -git-repo https://github.com/org/repo.git -git-branch main\n\n")
+		fmt.Fprintf(os.Stderr, "  # Install with SSL/HTTPS:\n")
+		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -le-email admin@example.com\n\n")
 		fmt.Fprintf(os.Stderr, "  # Verify system configuration:\n")
 		fmt.Fprintf(os.Stderr, "  svp -mode verify\n\n")
 	}
@@ -84,6 +87,13 @@ func main() {
 			utils.Err("Primary domain is required for setup mode")
 			utils.Err("Use: svp -mode setup -cms %s -domain your-domain.com", cfg.CMS)
 			os.Exit(1)
+		}
+
+		// Warn if SSL is enabled but no email provided
+		if cfg.SSLEnable && cfg.LEEmail == "" {
+			utils.Warn("SSL is enabled but no Let's Encrypt email provided. SSL will be skipped.")
+			utils.Warn("Use -le-email to enable SSL/HTTPS.")
+			cfg.SSLEnable = false
 		}
 
 		err = cmd.FullSetup(cfg)

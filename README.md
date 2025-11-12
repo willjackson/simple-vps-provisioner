@@ -10,8 +10,9 @@ A Go-based command-line tool for provisioning Debian 13 (Trixie) VPS with LAMP s
 - **Multi-domain support** - Provision multiple domains in one run
 - **Per-domain PHP-FPM pools** - Isolated PHP processes for each site
 - **Git deployment** - Deploy from existing repositories
+- **SSL/HTTPS support** - Automatic Let's Encrypt certificates with certbot
 - **Idempotent** - Safe to run multiple times
-- **Security hardening** - Firewall, PHP settings, database security
+- **Security hardening** - Firewall, PHP settings, database security, HSTS, OCSP stapling
 
 ## Requirements
 

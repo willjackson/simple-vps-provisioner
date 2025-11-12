@@ -44,6 +44,9 @@ type Config struct {
 	// Whether to enable firewall
 	UFWEnable bool
 
+	// Whether to enable SSL/HTTPS
+	SSLEnable bool
+
 	// Switch all sites to new PHP version
 	SwitchAll bool
 

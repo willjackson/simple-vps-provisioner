@@ -76,6 +76,17 @@ func Verify(cfg *types.Config) error {
 		errors = append(errors, err)
 	}
 
+	// Check SSL/Certbot if enabled
+	if cfg.SSLEnable || cfg.LEEmail != "" {
+		utils.Section("SSL/Certbot")
+		if err := ssl.InstallCertbot(true); err != nil {
+			errors = append(errors, err)
+		}
+		if err := ssl.SetupAutoRenewal(true); err != nil {
+			errors = append(errors, err)
+		}
+	}
+
 	// Print summary
 	fmt.Println()
 	fmt.Println("==========================================================")

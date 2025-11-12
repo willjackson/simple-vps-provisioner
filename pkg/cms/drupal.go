@@ -174,6 +174,16 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		_, _ = utils.RunCommand("chmod", "u+w", sitesDefaultDir)
 		_, _ = utils.RunCommand("chmod", "u+w", settingsFile)
 
+		// Detect config directory
+		configSyncPath := "../config/sync"
+		for _, possiblePath := range []string{"../config/sync", "../../config/sync", "../../../config/sync"} {
+			fullPath := filepath.Join(sitesDefaultDir, possiblePath)
+			if utils.CheckDirExists(fullPath) {
+				configSyncPath = possiblePath
+				break
+			}
+		}
+
 		// Append database configuration
 		dbConfig := fmt.Sprintf(`
 
@@ -194,9 +204,12 @@ $settings['trusted_host_patterns'] = [
   '^%s$',
 ];
 
+// Config sync directory
+$settings['config_sync_directory'] = '%s';
+
 // Hash salt
 $settings['hash_salt'] = '%s';
-`, dbName, dbUser, dbPass, strings.ReplaceAll(domain, ".", "\\."), generateHashSalt())
+`, dbName, dbUser, dbPass, strings.ReplaceAll(domain, ".", "\\."), configSyncPath, generateHashSalt())
 
 		_, err = utils.RunShell(fmt.Sprintf("cat >> %s <<'EOF'\n%s\nEOF", settingsFile, dbConfig))
 		if err != nil {
@@ -208,7 +221,7 @@ $settings['hash_salt'] = '%s';
 		_, _ = utils.RunCommand("chmod", "555", sitesDefaultDir)
 
 		utils.Ok("settings.php created")
-		
+
 		// Create public files directory
 		filesDir := filepath.Join(sitesDefaultDir, "files")
 		if err := utils.EnsureDir(filesDir); err != nil {
@@ -270,54 +283,64 @@ func generateHashSalt() string {
 
 // InstallDrupalSite runs drush site-install if needed
 func InstallDrupalSite(domain, projectDir, adminUser string) error {
-	aliasName := strings.ReplaceAll(domain, ".", "_")
-	
+	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
+
+	if !utils.CheckFileExists(drushPath) {
+		utils.Warn("Drush not found, skipping site install")
+		return nil
+	}
+
 	// Check if Drupal is already installed
-	output, err := utils.RunShell(fmt.Sprintf("drush @%s status --field=bootstrap 2>/dev/null", aliasName))
+	output, err := utils.RunShell(fmt.Sprintf("cd %s && %s status --field=bootstrap 2>/dev/null", projectDir, drushPath))
 	if err == nil && strings.Contains(output, "Successful") {
 		utils.Verify("Drupal already installed")
 		return nil
 	}
 
 	utils.Log("Installing Drupal via drush site-install...")
-	
-	cmd := fmt.Sprintf("drush @%s site-install minimal -y --account-name=admin --account-pass=admin", aliasName)
+
+	cmd := fmt.Sprintf("cd %s && sudo -u %s %s site-install minimal -y --account-name=admin --account-pass=admin", projectDir, adminUser, drushPath)
 	_, err2 := utils.RunShell(cmd)
 	if err2 != nil {
 		return fmt.Errorf("drush site-install failed: %v", err2)
 	}
-	
+
 	utils.Ok("Drupal site installed")
 	return nil
 }
 
 // ImportDrupalConfig imports configuration via drush cim
 func ImportDrupalConfig(domain, projectDir, adminUser string) error {
-	aliasName := strings.ReplaceAll(domain, ".", "_")
-	
+	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
+
+	if !utils.CheckFileExists(drushPath) {
+		utils.Warn("Drush not found, skipping config import")
+		return nil
+	}
+
 	// Check if config/sync directory exists
 	configDir := filepath.Join(projectDir, "config/sync")
 	if !utils.CheckDirExists(configDir) {
 		utils.Skip("No config/sync directory found, skipping config import")
 		return nil
 	}
-	
+
 	// Check if config directory has files
 	output, err := utils.RunShell(fmt.Sprintf("ls -A %s | wc -l", configDir))
 	if err != nil || strings.TrimSpace(output) == "0" {
 		utils.Skip("Config directory empty, skipping config import")
 		return nil
 	}
-	
+
 	utils.Log("Importing Drupal configuration...")
-	
-	cmd := fmt.Sprintf("drush @%s config-import -y", aliasName)
+
+	cmd := fmt.Sprintf("cd %s && sudo -u %s %s config-import -y", projectDir, adminUser, drushPath)
 	_, err2 := utils.RunShell(cmd)
 	if err2 != nil {
 		utils.Warn("Config import failed: %v", err2)
 		return nil
 	}
-	
+
 	utils.Ok("Configuration imported")
 	return nil
 }

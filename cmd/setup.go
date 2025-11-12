@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 	"svp/pkg/cms"
 	"svp/pkg/config"
 	"svp/pkg/database"
+	"svp/pkg/ssl"
 	"svp/pkg/system"
 	"svp/pkg/utils"
 	"svp/pkg/web"
-	"path/filepath"
-	"strings"
 	"svp/types"
 )
 
@@ -220,6 +221,37 @@ func FullSetup(cfg *types.Config) error {
 	utils.Section("Nginx")
 	if err := web.ReloadNginx(); err != nil {
 		return err
+	}
+
+	// Install Certbot and obtain SSL certificates if enabled and email provided
+	if cfg.SSLEnable && cfg.LEEmail != "" {
+		utils.Section("SSL Certificates")
+		if err := ssl.InstallCertbot(cfg.VerifyOnly); err != nil {
+			return err
+		}
+
+		// Obtain certificates for all domains
+		for _, domain := range domains {
+			if err := ssl.ObtainCertificate(domain, cfg.LEEmail); err != nil {
+				utils.Warn("Failed to obtain SSL for %s: %v", domain, err)
+				continue
+			}
+
+			// Enhance SSL configuration with better security settings
+			if err := ssl.EnhanceSSLConfig(domain); err != nil {
+				utils.Warn("Failed to enhance SSL config for %s: %v", domain, err)
+			}
+		}
+
+		// Setup auto-renewal
+		if err := ssl.SetupAutoRenewal(cfg.VerifyOnly); err != nil {
+			return err
+		}
+
+		// Reload nginx to apply enhanced SSL settings
+		if err := web.ReloadNginx(); err != nil {
+			return err
+		}
 	}
 
 	// Setup firewall
