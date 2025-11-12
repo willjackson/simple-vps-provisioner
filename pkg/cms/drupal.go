@@ -98,6 +98,19 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 	composerDir := projectDir
 	if drupalRoot != "" {
 		composerDir = filepath.Join(projectDir, drupalRoot)
+	} else {
+		// Auto-detect composer.json location
+		if !utils.CheckFileExists(filepath.Join(projectDir, "composer.json")) {
+			// Look in common subdirectories
+			for _, subdir := range []string{"drupal", "app", "backend"} {
+				potentialPath := filepath.Join(projectDir, subdir)
+				if utils.CheckFileExists(filepath.Join(potentialPath, "composer.json")) {
+					composerDir = potentialPath
+					utils.Log("Auto-detected Drupal root: %s", subdir)
+					break
+				}
+			}
+		}
 	}
 
 	// Run composer install
