@@ -415,7 +415,7 @@ func InstallDrupalSite(domain, projectDir, adminUser, dbImport string) error {
 	utils.Log("Installing Drupal via drush site-install...")
 
 	cmd := fmt.Sprintf("cd %s && sudo -u %s %s site-install minimal -y --account-name=admin --account-pass=admin", projectDir, adminUser, drushPath)
-	_, err := utils.RunShell(cmd)
+	_, err = utils.RunShell(cmd)
 	if err != nil {
 		return fmt.Errorf("drush site-install failed: %v", err)
 	}
