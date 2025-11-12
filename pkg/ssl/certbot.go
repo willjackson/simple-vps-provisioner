@@ -79,6 +79,83 @@ func SetupAutoRenewal(verifyOnly bool) error {
 	return nil
 }
 
+// FixSSLDocroot ensures the SSL server block uses the correct document root
+func FixSSLDocroot(domain, webroot string) error {
+	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s", domain)
+	
+	if !utils.CheckFileExists(vhostPath) {
+		return fmt.Errorf("nginx vhost not found: %s", vhostPath)
+	}
+
+	utils.Log("Fixing SSL docroot for %s...", domain)
+
+	// Read current config
+	content, err := utils.RunShell(fmt.Sprintf("cat %s", vhostPath))
+	if err != nil {
+		return fmt.Errorf("failed to read vhost config: %v", err)
+	}
+
+	// Check if SSL is configured
+	if !strings.Contains(content, "ssl_certificate") {
+		utils.Skip("SSL not configured yet, skipping docroot fix")
+		return nil
+	}
+
+	// Replace any incorrect root paths in the SSL server block (port 443)
+	// Strategy: Find the ssl server block and ensure it has the correct root directive
+	lines := strings.Split(content, "\n")
+	var result []string
+	inSSLBlock := false
+	rootFixed := false
+	
+	for i, line := range lines {
+		// Detect start of SSL server block
+		if strings.Contains(line, "listen 443") || strings.Contains(line, "listen [::]:443") {
+			inSSLBlock = true
+		}
+		
+		// Fix root directive in SSL block
+		if inSSLBlock && strings.Contains(line, "root ") && !strings.Contains(line, webroot) {
+			// Replace with correct root
+			indent := strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " ")))
+			result = append(result, fmt.Sprintf("%sroot %s;", indent, webroot))
+			rootFixed = true
+			utils.Log("Fixed root directive in SSL block")
+		} else {
+			result = append(result, line)
+		}
+		
+		// Detect end of server block
+		if inSSLBlock && strings.TrimSpace(line) == "}" {
+			// Check if this is the closing brace of the server block
+			// Count opening and closing braces up to this point
+			openBraces := 0
+			for j := 0; j <= i; j++ {
+				openBraces += strings.Count(lines[j], "{")
+				openBraces -= strings.Count(lines[j], "}")
+			}
+			if openBraces == 0 {
+				inSSLBlock = false
+			}
+		}
+	}
+	
+	if !rootFixed {
+		utils.Verify("SSL docroot already correct")
+		return nil
+	}
+
+	// Write fixed config
+	fixedContent := strings.Join(result, "\n")
+	_, err = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", vhostPath, fixedContent))
+	if err != nil {
+		return fmt.Errorf("failed to write fixed config: %v", err)
+	}
+
+	utils.Ok("SSL docroot fixed for %s", domain)
+	return nil
+}
+
 // EnhanceSSLConfig adds advanced security settings to nginx SSL configuration
 func EnhanceSSLConfig(domain string) error {
 	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s", domain)

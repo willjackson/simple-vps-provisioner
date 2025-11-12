@@ -232,6 +232,27 @@ func FullSetup(cfg *types.Config) error {
 
 		// Obtain/reconfigure certificates for all domains
 		for _, domain := range domains {
+			domainDir := filepath.Join(cfg.Webroot, domain)
+			
+			// Determine webroot for this domain (same logic as earlier)
+			siteWebroot := domainDir
+			if cfg.CMS == "drupal" {
+				if cfg.DrupalRoot != "" {
+					siteWebroot = filepath.Join(siteWebroot, cfg.DrupalRoot)
+				} else {
+					for _, subdir := range []string{"drupal/web", "app/web", "backend/web", "web"} {
+						potentialPath := filepath.Join(domainDir, subdir)
+						if utils.CheckFileExists(filepath.Join(potentialPath, "index.php")) {
+							siteWebroot = potentialPath
+							break
+						}
+					}
+				}
+				if cfg.Docroot != "" {
+					siteWebroot = filepath.Join(domainDir, cfg.Docroot)
+				}
+			}
+			
 			// Check if certificate already exists
 			certPath := fmt.Sprintf("/etc/letsencrypt/live/%s/fullchain.pem", domain)
 			if utils.CheckFileExists(certPath) {
@@ -249,6 +270,11 @@ func FullSetup(cfg *types.Config) error {
 					utils.Warn("Failed to obtain SSL for %s: %v", domain, err)
 					continue
 				}
+			}
+
+			// Fix SSL docroot to match HTTP docroot
+			if err := ssl.FixSSLDocroot(domain, siteWebroot); err != nil {
+				utils.Warn("Failed to fix SSL docroot for %s: %v", domain, err)
 			}
 
 			// Enhance SSL configuration with better security settings

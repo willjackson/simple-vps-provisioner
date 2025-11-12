@@ -428,8 +428,7 @@ func ImportDrupalConfig(domain, projectDir, adminUser string, hasDBImport bool) 
 	}
 
 	// Check if config directory has actual config files (look for .yml files)
-	output, err := utils.RunShell(fmt.Sprintf("ls -A %s 2>/dev/null | grep -E '\\.yml
- | wc -l", configDir))
+	output, err := utils.RunShell(fmt.Sprintf("ls -A %s 2>/dev/null | grep -E '\\.yml$' | wc -l", configDir))
 	if err != nil {
 		utils.Skip("Cannot check config directory, skipping config import")
 		return nil
