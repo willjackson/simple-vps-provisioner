@@ -229,7 +229,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 			drushYmlPath := filepath.Join(drushDir, "drush.yml")
 			if !utils.CheckFileExists(drushYmlPath) {
 				drushYml := fmt.Sprintf("options:\n  uri: 'http://%s'\n", domain)
-				err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", drushYmlPath, drushYml))
+				_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", drushYmlPath, drushYml))
 				if err != nil {
 					utils.Warn("Failed to create drush.yml: %v", err)
 				} else {
@@ -415,9 +415,9 @@ func InstallDrupalSite(domain, projectDir, adminUser, dbImport string) error {
 	utils.Log("Installing Drupal via drush site-install...")
 
 	cmd := fmt.Sprintf("cd %s && sudo -u %s %s site-install minimal -y --account-name=admin --account-pass=admin", projectDir, adminUser, drushPath)
-	_, err2 = utils.RunShell(cmd)
-	if err2 != nil {
-		return fmt.Errorf("drush site-install failed: %v", err2)
+	_, err := utils.RunShell(cmd)
+	if err != nil {
+		return fmt.Errorf("drush site-install failed: %v", err)
 	}
 
 	utils.Ok("Drupal site installed")
