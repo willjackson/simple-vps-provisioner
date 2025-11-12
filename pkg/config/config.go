@@ -104,10 +104,21 @@ func SetCurrentPHPIfEmpty(defaultVersion string) error {
 
 // EnsureAdminUser creates an admin user if it doesn't exist
 func EnsureAdminUser(verifyOnly bool) error {
-	// Check if admin user exists
-	_, err := utils.RunCommand("id", "admin")
+	// Prompt for username if not exists
+	var username string
+	output, err := utils.RunShell("getent group www-data | cut -d: -f4")
 	if err == nil {
-		utils.Verify("Admin user already exists")
+		members := strings.Split(strings.TrimSpace(output), ",")
+		for _, member := range members {
+			if member != "" && member != "www-data" {
+				username = member
+				break
+			}
+		}
+	}
+
+	if username != "" {
+		utils.Verify("Admin user already exists: %s", username)
 		return nil
 	}
 
@@ -116,33 +127,31 @@ func EnsureAdminUser(verifyOnly bool) error {
 		return fmt.Errorf("admin user does not exist")
 	}
 
-	utils.Log("Creating admin user...")
+	fmt.Print("Enter admin username [admin]: ")
+	fmt.Scanln(&username)
+	if username == "" {
+		username = "admin"
+	}
 
-	// Create admin user
-	_, err = utils.RunCommand("useradd", "-m", "-s", "/bin/bash", "admin")
+	utils.Log("Creating admin user: %s", username)
+
+	// Create user
+	_, err = utils.RunCommand("useradd", "-m", "-s", "/bin/bash", username)
 	if err != nil {
 		return fmt.Errorf("failed to create admin user: %v", err)
 	}
 
-	// Add to www-data group
-	_, err = utils.RunCommand("usermod", "-a", "-G", "www-data", "admin")
+	// Add to www-data and sudo groups
+	_, _ = utils.RunCommand("usermod", "-a", "-G", "www-data", username)
+	_, _ = utils.RunCommand("usermod", "-a", "-G", "sudo", username)
+
+	// Set password
+	utils.Log("Set password for %s:", username)
+	_, err = utils.RunShell(fmt.Sprintf("passwd %s", username))
 	if err != nil {
-		return fmt.Errorf("failed to add admin to www-data group: %v", err)
+		utils.Warn("Failed to set password: %v", err)
 	}
 
-	// Add to sudo group
-	_, err = utils.RunCommand("usermod", "-a", "-G", "sudo", "admin")
-	if err != nil {
-		return fmt.Errorf("failed to add admin to sudo group: %v", err)
-	}
-
-	// Set password (prompt user)
-	utils.Log("Set password for admin user:")
-	_, err = utils.RunShell("passwd admin")
-	if err != nil {
-		utils.Warn("Failed to set admin password: %v", err)
-	}
-
-	utils.Ok("Admin user created")
+	utils.Ok("Admin user created: %s", username)
 	return nil
 }

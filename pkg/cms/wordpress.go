@@ -12,6 +12,19 @@ import (
 func InstallWordPress(domain, webroot, gitRepo, gitBranch string, sitesDir string) error {
 	utils.Section("Installing WordPress for " + domain)
 
+	// Get admin username from www-data group
+	adminUser := "admin"
+	output, err := utils.RunShell("getent group www-data | cut -d: -f4")
+	if err == nil {
+		members := strings.Split(strings.TrimSpace(output), ",")
+		for _, member := range members {
+			if member != "" && member != "www-data" {
+				adminUser = member
+				break
+			}
+		}
+	}
+
 	domainDir := filepath.Join(webroot, domain)
 
 	// Ensure webroot exists
@@ -20,7 +33,7 @@ func InstallWordPress(domain, webroot, gitRepo, gitBranch string, sitesDir strin
 	}
 
 	// Set ownership to admin:www-data
-	_, _ = utils.RunCommand("chown", "-R", "admin:www-data", domainDir)
+	_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), domainDir)
 	_, _ = utils.RunCommand("chmod", "-R", "775", domainDir)
 
 	// Check if Git repo is specified
@@ -48,7 +61,7 @@ func InstallWordPress(domain, webroot, gitRepo, gitBranch string, sitesDir strin
 		} else {
 			// Download WordPress core
 			utils.Log("Downloading WordPress core...")
-			_, err := utils.RunShell(fmt.Sprintf("cd %s && sudo -u admin wp core download", domainDir))
+			_, err := utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s wp core download", domainDir, adminUser))
 			if err != nil {
 				return fmt.Errorf("failed to download WordPress: %v", err)
 			}
@@ -116,7 +129,7 @@ require_once ABSPATH . 'wp-settings.php';
 	}
 
 	// Set proper ownership and permissions
-	_, _ = utils.RunCommand("chown", "-R", "admin:www-data", domainDir)
+	_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), domainDir)
 	_, _ = utils.RunCommand("find", domainDir, "-type", "d", "-exec", "chmod", "775", "{}", "+")
 	_, _ = utils.RunCommand("find", domainDir, "-type", "f", "-exec", "chmod", "664", "{}", "+")
 

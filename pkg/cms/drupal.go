@@ -2,17 +2,49 @@ package cms
 
 import (
 	"fmt"
-	"svp/pkg/database"
-	"svp/pkg/utils"
+	"os"
 	"path/filepath"
 	"strings"
+	"svp/pkg/database"
+	"svp/pkg/utils"
 )
 
 // InstallDrupal installs a Drupal site for a domain
 func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot string, sitesDir string) error {
 	utils.Section("Installing Drupal for " + domain)
 
+	// Get admin username from www-data group
+	adminUser := "admin"
+	output, err := utils.RunShell("getent group www-data | cut -d: -f4")
+	if err == nil {
+		members := strings.Split(strings.TrimSpace(output), ",")
+		for _, member := range members {
+			if member != "" && member != "www-data" {
+				adminUser = member
+				break
+			}
+		}
+	}
+
 	domainDir := filepath.Join(webroot, domain)
+
+	// Check if directory exists and is not empty
+	if utils.CheckDirExists(domainDir) {
+		entries, err := utils.RunShell(fmt.Sprintf("ls -A %s | wc -l", domainDir))
+		if err == nil && strings.TrimSpace(entries) != "0" {
+			utils.Warn("Directory %s is not empty", domainDir)
+			fmt.Print("Delete and reprovision? [y/N]: ")
+			var response string
+			fmt.Scanln(&response)
+			if strings.ToLower(response) != "y" {
+				return fmt.Errorf("aborted: directory not empty")
+			}
+			utils.Log("Removing existing directory...")
+			if _, err := utils.RunCommand("rm", "-rf", domainDir); err != nil {
+				return fmt.Errorf("failed to remove directory: %v", err)
+			}
+		}
+	}
 
 	// Ensure webroot exists
 	if err := utils.EnsureDir(domainDir); err != nil {
@@ -20,7 +52,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 	}
 
 	// Set ownership to admin:www-data
-	_, _ = utils.RunCommand("chown", "-R", "admin:www-data", domainDir)
+	_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), domainDir)
 	_, _ = utils.RunCommand("chmod", "-R", "775", domainDir)
 
 	var projectDir string
@@ -51,8 +83,8 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		if !utils.CheckFileExists(composerJSON) {
 			utils.Log("Creating new Drupal project via Composer...")
 
-			// Create Drupal project
-			_, err := utils.RunShell(fmt.Sprintf("cd %s && composer create-project drupal/recommended-project . --no-interaction", projectDir))
+			// Create Drupal project as admin user
+			_, err := utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s composer create-project drupal/recommended-project . --no-interaction", projectDir, adminUser))
 			if err != nil {
 				return fmt.Errorf("failed to create Drupal project: %v", err)
 			}
@@ -73,7 +105,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 	composerJSON := filepath.Join(composerDir, "composer.json")
 	if utils.CheckFileExists(composerJSON) {
 		utils.Log("Running composer install...")
-		_, err := utils.RunShell(fmt.Sprintf("cd %s && composer install --no-interaction --prefer-dist", composerDir))
+		_, err := utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s composer install --no-interaction --prefer-dist", composerDir, adminUser))
 		if err != nil {
 			utils.Warn("Composer install failed: %v", err)
 		} else {
@@ -83,7 +115,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 
 	// Install Drush locally
 	utils.Log("Installing Drush...")
-	_, err := utils.RunShell(fmt.Sprintf("cd %s && composer require drush/drush --no-interaction", composerDir))
+	_, err = utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s composer require drush/drush --no-interaction", composerDir, adminUser))
 	if err != nil {
 		utils.Warn("Failed to install Drush: %v", err)
 	} else {
@@ -164,7 +196,7 @@ $settings['hash_salt'] = '%s';
 	}
 
 	// Set proper ownership
-	_, _ = utils.RunCommand("chown", "-R", "admin:www-data", domainDir)
+	_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), domainDir)
 
 	utils.Ok("Drupal installation complete for %s", domain)
 	return nil
