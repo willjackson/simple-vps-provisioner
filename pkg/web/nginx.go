@@ -162,13 +162,14 @@ server {
 `, domain, domain, webroot, poolName, domain, domain, phpVersion)
 
 	if utils.CheckFileExists(vhostPath) {
-		utils.Verify("Nginx vhost already exists for %s", domain)
+		utils.Log("Updating Nginx vhost for %s", domain)
 	} else {
 		utils.Log("Creating Nginx vhost for %s", domain)
-		_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", vhostPath, vhostConfig))
-		if err != nil {
-			return fmt.Errorf("failed to create vhost config: %v", err)
-		}
+	}
+	
+	_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", vhostPath, vhostConfig))
+	if err != nil {
+		return fmt.Errorf("failed to create vhost config: %v", err)
 	}
 
 	// Enable site
