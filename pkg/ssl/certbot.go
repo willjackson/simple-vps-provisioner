@@ -136,7 +136,7 @@ func EnhanceSSLConfig(domain string) error {
 	}
 
 	// Write enhanced config
-	err = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", vhostPath, enhancedContent))
+	_, err = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", vhostPath, enhancedContent))
 	if err != nil {
 		return fmt.Errorf("failed to write enhanced config: %v", err)
 	}
