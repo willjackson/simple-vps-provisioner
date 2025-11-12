@@ -82,7 +82,7 @@ func SetupAutoRenewal(verifyOnly bool) error {
 
 // FixSSLDocroot ensures the SSL server block uses the correct document root
 func FixSSLDocroot(domain, webroot string) error {
-	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s", domain)
+	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s.conf", domain)
 	
 	if !utils.CheckFileExists(vhostPath) {
 		return fmt.Errorf("nginx vhost not found: %s", vhostPath)
@@ -159,7 +159,7 @@ func FixSSLDocroot(domain, webroot string) error {
 
 // EnhanceSSLConfig adds advanced security settings to nginx SSL configuration
 func EnhanceSSLConfig(domain string) error {
-	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s", domain)
+	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s.conf", domain)
 	
 	if !utils.CheckFileExists(vhostPath) {
 		return fmt.Errorf("nginx vhost not found: %s", vhostPath)

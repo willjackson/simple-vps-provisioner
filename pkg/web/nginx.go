@@ -119,8 +119,8 @@ add_header X-XSS-Protection "1; mode=block" always;
 
 // CreateNginxVhost creates an Nginx virtual host configuration
 func CreateNginxVhost(domain, webroot, phpVersion string) error {
-	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s", domain)
-	vhostLink := fmt.Sprintf("/etc/nginx/sites-enabled/%s", domain)
+	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s.conf", domain)
+	vhostLink := fmt.Sprintf("/etc/nginx/sites-enabled/%s.conf", domain)
 
 	// Sanitize pool name for PHP-FPM
 	poolName := domain

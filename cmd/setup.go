@@ -183,6 +183,14 @@ func FullSetup(cfg *types.Config) error {
 			return err
 		}
 
+		// Clean up old nginx config without .conf extension
+		oldVhost := fmt.Sprintf("/etc/nginx/sites-available/%s", domain)
+		oldLink := fmt.Sprintf("/etc/nginx/sites-enabled/%s", domain)
+		if utils.CheckFileExists(oldVhost) {
+			utils.Log("Removing old nginx config: %s", oldVhost)
+			_, _ = utils.RunCommand("rm", "-f", oldVhost, oldLink)
+		}
+
 		// Create Drush alias for Drupal
 		if cfg.CMS == "drupal" {
 			drushDir := domainDir
@@ -216,14 +224,18 @@ func FullSetup(cfg *types.Config) error {
 				utils.Warn("Failed to create Drush alias: %v", err)
 			}
 			
-			// Install Drupal site if not already installed
+			// Install Drupal site if not already installed (skipped if db provided)
 			if err := cms.InstallDrupalSite(domain, drushDir, adminUser, dbImportPath); err != nil {
 				utils.Warn("Failed to install Drupal site: %v", err)
 			}
 			
-			// Import configuration if available (skip if database was imported)
-			if err := cms.ImportDrupalConfig(domain, drushDir, adminUser, dbImportPath != ""); err != nil {
-				utils.Warn("Failed to import configuration: %v", err)
+			// Import configuration only if database was NOT imported
+			if dbImportPath == "" {
+				if err := cms.ImportDrupalConfig(domain, drushDir, adminUser, false); err != nil {
+					utils.Warn("Failed to import configuration: %v", err)
+				}
+			} else {
+				utils.Skip("Skipping config import (database was imported)")
 			}
 		}
 	}
