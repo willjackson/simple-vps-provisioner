@@ -134,14 +134,24 @@ func FullSetup(cfg *types.Config) error {
 		// Determine webroot for this domain
 		siteWebroot := domainDir
 		if cfg.CMS == "drupal" {
+			// Auto-detect Drupal root by finding index.php
 			if cfg.DrupalRoot != "" {
 				siteWebroot = filepath.Join(siteWebroot, cfg.DrupalRoot)
+			} else {
+				// Look for index.php in common locations
+				for _, subdir := range []string{"drupal/web", "app/web", "backend/web", "web"} {
+					potentialPath := filepath.Join(domainDir, subdir)
+					if utils.CheckFileExists(filepath.Join(potentialPath, "index.php")) {
+						siteWebroot = potentialPath
+						utils.Log("Auto-detected docroot: %s", subdir)
+						break
+					}
+				}
 			}
+			
 			if cfg.Docroot != "" {
-				siteWebroot = filepath.Join(siteWebroot, cfg.Docroot)
+				siteWebroot = filepath.Join(domainDir, cfg.Docroot)
 			}
-			// Drupal typically serves from web/ directory
-			siteWebroot = filepath.Join(siteWebroot, "web")
 		}
 
 		utils.Log("Configuring site: %s", domain)

@@ -103,17 +103,23 @@ func CreateDatabase(domain string, sitesDir string) (dbName, dbUser, dbPass stri
 	utils.Ok("Database created: %s", dbName)
 
 	// Create user and grant privileges
-	createUserSQL := fmt.Sprintf("CREATE USER IF NOT EXISTS '%s'@'localhost' IDENTIFIED BY '%s';", dbUser, dbPass)
+	// Drop user first to ensure clean state
+	_, _ = utils.RunShell(fmt.Sprintf("mariadb -e \"DROP USER IF EXISTS '%s'@'localhost';\"", dbUser))
+	
+	createUserSQL := fmt.Sprintf("CREATE USER '%s'@'localhost' IDENTIFIED BY '%s';", dbUser, dbPass)
 	_, err = utils.RunShell(fmt.Sprintf("mariadb -e \"%s\"", createUserSQL))
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to create database user: %v", err)
 	}
 
-	grantSQL := fmt.Sprintf("GRANT ALL PRIVILEGES ON %s.* TO '%s'@'localhost'; FLUSH PRIVILEGES;", dbName, dbUser)
+	grantSQL := fmt.Sprintf("GRANT ALL PRIVILEGES ON %s.* TO '%s'@'localhost';", dbName, dbUser)
 	_, err = utils.RunShell(fmt.Sprintf("mariadb -e \"%s\"", grantSQL))
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to grant privileges: %v", err)
 	}
+	
+	// Flush privileges
+	_, _ = utils.RunShell("mariadb -e 'FLUSH PRIVILEGES;'")
 	utils.Ok("Database user created: %s", dbUser)
 
 	// Save credentials to secure file
