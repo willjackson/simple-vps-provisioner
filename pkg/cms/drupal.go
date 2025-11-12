@@ -174,15 +174,18 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		_, _ = utils.RunCommand("chmod", "u+w", sitesDefaultDir)
 		_, _ = utils.RunCommand("chmod", "u+w", settingsFile)
 
-		// Detect config directory
-		configSyncPath := "../config/sync"
-		for _, possiblePath := range []string{"../config/sync", "../../config/sync", "../../../config/sync"} {
-			fullPath := filepath.Join(sitesDefaultDir, possiblePath)
-			if utils.CheckDirExists(fullPath) {
-				configSyncPath = possiblePath
-				break
-			}
+		// Calculate config directory path relative to settings.php
+		// settings.php is at: composerDir/web/sites/default/settings.php
+		// config should be at: composerDir/config/sync
+		// So from settings.php: ../../../config/sync
+		configDir := filepath.Join(composerDir, "config", "sync")
+		if err := utils.EnsureDir(configDir); err != nil {
+			utils.Warn("Failed to create config directory: %v", err)
+		} else {
+			_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), configDir)
+			utils.Ok("Config directory created: %s", configDir)
 		}
+		configSyncPath := "../../../config/sync"
 
 		// Append database configuration
 		dbConfig := fmt.Sprintf(`
@@ -272,6 +275,40 @@ func CreateDrushAlias(domain, projectDir, adminUser string) error {
 	}
 
 	utils.Ok("Drush alias: @%s", aliasName)
+	
+	// Also create a shell wrapper for convenience
+	return CreateDrushWrapper(domain, projectDir)
+}
+
+// CreateDrushWrapper creates a shell wrapper script for easy drush access
+func CreateDrushWrapper(domain, projectDir string) error {
+	wrapperPath := fmt.Sprintf("/usr/local/bin/drush-%s", domain)
+	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
+
+	wrapperScript := fmt.Sprintf(`#!/bin/bash
+# Drush wrapper for %s
+cd %s || exit 1
+exec %s "$@"
+`, domain, projectDir, drushPath)
+
+	if utils.CheckFileExists(wrapperPath) {
+		utils.Verify("Drush wrapper already exists for %s", domain)
+		return nil
+	}
+
+	utils.Log("Creating Drush wrapper for %s", domain)
+
+	_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", wrapperPath, wrapperScript))
+	if err != nil {
+		return fmt.Errorf("failed to create Drush wrapper: %v", err)
+	}
+
+	_, err = utils.RunCommand("chmod", "+x", wrapperPath)
+	if err != nil {
+		return fmt.Errorf("failed to make Drush wrapper executable: %v", err)
+	}
+
+	utils.Ok("Drush wrapper created: drush-%s", domain)
 	return nil
 }
 

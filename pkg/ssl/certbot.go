@@ -101,7 +101,13 @@ func EnhanceSSLConfig(domain string) error {
 		return nil
 	}
 
-	// Add enhanced SSL configuration after the ssl_certificate lines
+	// Check if SSL is configured (look for ssl_certificate_key line)
+	if !strings.Contains(content, "ssl_certificate_key") {
+		utils.Warn("SSL not configured yet (no ssl_certificate_key found), skipping enhancement")
+		return nil
+	}
+
+	// Add enhanced SSL configuration after the ssl_certificate_key line
 	enhancedConfig := `
     # Enhanced SSL Security Settings
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -123,17 +129,17 @@ func EnhanceSSLConfig(domain string) error {
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
 `
 
-	// Insert after ssl_certificate_key line
-	enhancedContent := strings.Replace(content,
-		"ssl_certificate_key",
-		fmt.Sprintf("ssl_certificate_key%s", enhancedConfig),
-		1)
-
-	// Only replace if we actually found the marker
-	if enhancedContent == content {
-		utils.Warn("Could not find ssl_certificate_key in config, skipping SSL enhancement")
-		return nil
+	// Find the ssl_certificate_key line and insert enhanced config after it
+	lines := strings.Split(content, "\n")
+	var result []string
+	for _, line := range lines {
+		result = append(result, line)
+		// After ssl_certificate_key line, add enhanced config
+		if strings.Contains(line, "ssl_certificate_key") && strings.Contains(line, ";") {
+			result = append(result, enhancedConfig)
+		}
 	}
+	enhancedContent := strings.Join(result, "\n")
 
 	// Write enhanced config
 	_, err = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", vhostPath, enhancedContent))
