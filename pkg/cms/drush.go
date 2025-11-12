@@ -32,7 +32,7 @@ func UpdateDrushURLToHTTPS(domain, composerDir string) error {
 	newContent := strings.ReplaceAll(content, fmt.Sprintf("http://%s", domain), fmt.Sprintf("https://%s", domain))
 	
 	utils.Log("Updating drush.yml to use HTTPS...")
-	err = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", drushYmlPath, newContent))
+	_, err = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", drushYmlPath, newContent))
 	if err != nil {
 		return fmt.Errorf("failed to update drush.yml: %v", err)
 	}
