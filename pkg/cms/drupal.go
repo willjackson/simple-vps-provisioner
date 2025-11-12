@@ -221,6 +221,26 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		}
 		configSyncPath := "../config/sync"
 
+		// Create drush directory and drush.yml
+		drushDir := filepath.Join(composerDir, "drush")
+		if err := utils.EnsureDir(drushDir); err != nil {
+			utils.Warn("Failed to create drush directory: %v", err)
+		} else {
+			drushYmlPath := filepath.Join(drushDir, "drush.yml")
+			if !utils.CheckFileExists(drushYmlPath) {
+				drushYml := fmt.Sprintf("options:\n  uri: 'http://%s'\n", domain)
+				err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", drushYmlPath, drushYml))
+				if err != nil {
+					utils.Warn("Failed to create drush.yml: %v", err)
+				} else {
+					_, _ = utils.RunCommand("chown", fmt.Sprintf("%s:www-data", adminUser), drushYmlPath)
+					utils.Ok("Created drush/drush.yml with base URL")
+				}
+			} else {
+				utils.Verify("drush/drush.yml already exists")
+			}
+		}
+
 		// Append database configuration
 		dbConfig := fmt.Sprintf(`
 

@@ -85,6 +85,26 @@ func FullSetup(cfg *types.Config) error {
 		return err
 	}
 
+	// Setup SSH key for admin if git repo provided
+	if cfg.GitRepo != "" {
+		utils.Section("SSH Key Setup")
+		// Get admin username
+		adminUser := "admin"
+		output, err := utils.RunShell("getent group www-data | cut -d: -f4")
+		if err == nil {
+			members := strings.Split(strings.TrimSpace(output), ",")
+			for _, member := range members {
+				if member != "" && member != "www-data" {
+					adminUser = member
+					break
+				}
+			}
+		}
+		if err := config.EnsureAdminSSHKey(adminUser); err != nil {
+			return err
+		}
+	}
+
 	// Prepare webroot
 	utils.Section("Webroot")
 	if err := utils.EnsureDir(cfg.Webroot); err != nil {
@@ -303,6 +323,25 @@ func FullSetup(cfg *types.Config) error {
 			// Enhance SSL configuration with better security settings
 			if err := ssl.EnhanceSSLConfig(domain); err != nil {
 				utils.Warn("Failed to enhance SSL config for %s: %v", domain, err)
+			}
+
+			// Update drush.yml to use HTTPS for Drupal sites
+			if cfg.CMS == "drupal" {
+				drushDir := domainDir
+				if cfg.DrupalRoot != "" {
+					drushDir = filepath.Join(drushDir, cfg.DrupalRoot)
+				} else {
+					for _, subdir := range []string{"drupal", "app", "backend"} {
+						potentialPath := filepath.Join(domainDir, subdir)
+						if utils.CheckFileExists(filepath.Join(potentialPath, "composer.json")) {
+							drushDir = potentialPath
+							break
+						}
+					}
+				}
+				if err := cms.UpdateDrushURLToHTTPS(domain, drushDir); err != nil {
+					utils.Warn("Failed to update drush URL: %v", err)
+				}
 			}
 		}
 

@@ -145,11 +145,21 @@ func EnsureAdminUser(verifyOnly bool) error {
 	_, _ = utils.RunCommand("usermod", "-a", "-G", "www-data", username)
 	_, _ = utils.RunCommand("usermod", "-a", "-G", "sudo", username)
 
-	// Set password
-	utils.Log("Set password for %s:", username)
-	_, err = utils.RunShell(fmt.Sprintf("passwd %s", username))
+	// Generate and set password
+	password, _ := database.GeneratePassword(16)
+	chpasswdInput := fmt.Sprintf("%s:%s", username, password)
+	_, err = utils.RunCommandWithInput(chpasswdInput, "chpasswd")
 	if err != nil {
 		utils.Warn("Failed to set password: %v", err)
+	} else {
+		fmt.Println()
+		fmt.Println("===========================================================")
+		fmt.Printf("Admin user: %s\n", username)
+		fmt.Printf("Password: %s\n", password)
+		fmt.Println("===========================================================")
+		fmt.Println("SAVE THIS PASSWORD - It will not be shown again!")
+		fmt.Println("===========================================================")
+		fmt.Println()
 	}
 
 	utils.Ok("Admin user created: %s", username)
