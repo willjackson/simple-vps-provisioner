@@ -282,9 +282,9 @@ func InstallDrupalSite(domain, projectDir, adminUser string) error {
 	utils.Log("Installing Drupal via drush site-install...")
 	
 	cmd := fmt.Sprintf("drush @%s site-install minimal -y --account-name=admin --account-pass=admin", aliasName)
-	_, err = utils.RunShell(cmd)
-	if err != nil {
-		return fmt.Errorf("drush site-install failed: %v", err)
+	output2, err2 := utils.RunShell(cmd)
+	if err2 != nil {
+		return fmt.Errorf("drush site-install failed: %v", err2)
 	}
 	
 	utils.Ok("Drupal site installed")
@@ -312,9 +312,9 @@ func ImportDrupalConfig(domain, projectDir, adminUser string) error {
 	utils.Log("Importing Drupal configuration...")
 	
 	cmd := fmt.Sprintf("drush @%s config-import -y", aliasName)
-	_, err = utils.RunShell(cmd)
-	if err != nil {
-		utils.Warn("Config import failed: %v", err)
+	output2, err2 := utils.RunShell(cmd)
+	if err2 != nil {
+		utils.Warn("Config import failed: %v", err2)
 		return nil
 	}
 	
