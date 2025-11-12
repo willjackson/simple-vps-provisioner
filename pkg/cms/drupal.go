@@ -155,7 +155,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		
 		// Drop all tables in existing database
 		utils.Log("Dropping all tables in database %s...", dbName)
-		dropTablesCmd := fmt.Sprintf(`mysql -u%s -p%s %s -e "SET FOREIGN_KEY_CHECKS = 0; SET GROUP_CONCAT_MAX_LEN=32768; SET @tables = NULL; SELECT GROUP_CONCAT('\`', table_name, '\`') INTO @tables FROM information_schema.tables WHERE table_schema = '%s'; SELECT IFNULL(@tables,'dummy') INTO @tables; SET @tables = CONCAT('DROP TABLE IF EXISTS ', @tables); PREPARE stmt FROM @tables; EXECUTE stmt; DEALLOCATE PREPARE stmt; SET FOREIGN_KEY_CHECKS = 1;"`, dbUser, dbPass, dbName, dbName)
+		dropTablesCmd := fmt.Sprintf("mysql -u%s -p%s %s -e \"SET FOREIGN_KEY_CHECKS = 0; SET GROUP_CONCAT_MAX_LEN=32768; SET @tables = NULL; SELECT GROUP_CONCAT('\\`', table_name, '\\`') INTO @tables FROM information_schema.tables WHERE table_schema = '%s'; SELECT IFNULL(@tables,'dummy') INTO @tables; SET @tables = CONCAT('DROP TABLE IF EXISTS ', @tables); PREPARE stmt FROM @tables; EXECUTE stmt; DEALLOCATE PREPARE stmt; SET FOREIGN_KEY_CHECKS = 1;\"", dbUser, dbPass, dbName, dbName)
 		_, err = utils.RunShell(dropTablesCmd)
 		if err != nil {
 			utils.Warn("Failed to drop tables (may be empty): %v", err)
