@@ -185,7 +185,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 			_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), configDir)
 			utils.Ok("Config directory created: %s", configDir)
 		}
-		configSyncPath := "../../../config/sync"
+		configSyncPath := "../config/sync"
 
 		// Append database configuration
 		dbConfig := fmt.Sprintf(`
@@ -200,6 +200,9 @@ $databases['default']['default'] = [
   'driver' => 'mysql',
   'prefix' => '',
   'collation' => 'utf8mb4_general_ci',
+  'init_commands' => [
+    'isolation_level' => 'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED',
+  ],
 ];
 
 // Trusted host patterns
@@ -235,6 +238,25 @@ $settings['hash_salt'] = '%s';
 		utils.Ok("Public files directory created")
 	} else {
 		utils.Verify("settings.php already exists")
+		
+		// Update config_sync_directory if needed
+		_, _ = utils.RunCommand("chmod", "u+w", settingsFile)
+		content, err := utils.RunShell(fmt.Sprintf("cat %s", settingsFile))
+		if err == nil {
+			// Check if config_sync_directory is set correctly
+			if !strings.Contains(content, "$settings['config_sync_directory']") || !strings.Contains(content, "../config/sync") {
+				utils.Log("Updating config_sync_directory in settings.php...")
+				
+				// Remove old config_sync_directory lines
+				_, _ = utils.RunShell(fmt.Sprintf("sed -i '/config_sync_directory/d' %s", settingsFile))
+				
+				// Append correct config path
+				configUpdate := "\n// Config sync directory\n$settings['config_sync_directory'] = '../config/sync';\n"
+				_, _ = utils.RunShell(fmt.Sprintf("cat >> %s <<'EOF'\n%s\nEOF", settingsFile, configUpdate))
+				utils.Ok("Config sync directory updated")
+			}
+		}
+		_, _ = utils.RunCommand("chmod", "444", settingsFile)
 	}
 
 	// Set proper ownership
@@ -290,11 +312,6 @@ func CreateDrushWrapper(domain, projectDir string) error {
 cd %s || exit 1
 exec %s "$@"
 `, domain, projectDir, drushPath)
-
-	if utils.CheckFileExists(wrapperPath) {
-		utils.Verify("Drush wrapper already exists for %s", domain)
-		return nil
-	}
 
 	utils.Log("Creating Drush wrapper for %s", domain)
 
@@ -362,14 +379,20 @@ func ImportDrupalConfig(domain, projectDir, adminUser string) error {
 		return nil
 	}
 
-	// Check if config directory has files
-	output, err := utils.RunShell(fmt.Sprintf("ls -A %s | wc -l", configDir))
-	if err != nil || strings.TrimSpace(output) == "0" {
-		utils.Skip("Config directory empty, skipping config import")
+	// Check if config directory has actual config files (look for .yml files)
+	output, err := utils.RunShell(fmt.Sprintf("ls -A %s 2>/dev/null | grep -E '\\.yml$' | wc -l", configDir))
+	if err != nil {
+		utils.Skip("Cannot check config directory, skipping config import")
+		return nil
+	}
+	
+	ymlCount := strings.TrimSpace(output)
+	if ymlCount == "0" || ymlCount == "" {
+		utils.Skip("No YAML config files found in config/sync, skipping config import")
 		return nil
 	}
 
-	utils.Log("Importing Drupal configuration...")
+	utils.Log("Importing Drupal configuration (%s config files)...", ymlCount)
 
 	cmd := fmt.Sprintf("cd %s && sudo -u %s %s config-import -y", projectDir, adminUser, drushPath)
 	_, err2 := utils.RunShell(cmd)

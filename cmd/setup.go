@@ -230,11 +230,25 @@ func FullSetup(cfg *types.Config) error {
 			return err
 		}
 
-		// Obtain certificates for all domains
+		// Obtain/reconfigure certificates for all domains
 		for _, domain := range domains {
-			if err := ssl.ObtainCertificate(domain, cfg.LEEmail); err != nil {
-				utils.Warn("Failed to obtain SSL for %s: %v", domain, err)
-				continue
+			// Check if certificate already exists
+			certPath := fmt.Sprintf("/etc/letsencrypt/live/%s/fullchain.pem", domain)
+			if utils.CheckFileExists(certPath) {
+				utils.Log("Reconfiguring nginx with existing SSL certificate for %s", domain)
+				// Run certbot again to reconfigure nginx (since we recreated vhost)
+				cmd := fmt.Sprintf("certbot --nginx -d %s --non-interactive --redirect", domain)
+				if _, err := utils.RunShell(cmd); err != nil {
+					utils.Warn("Failed to reconfigure SSL for %s: %v", domain, err)
+					continue
+				}
+				utils.Ok("SSL reconfigured for %s", domain)
+			} else {
+				// Obtain new certificate
+				if err := ssl.ObtainCertificate(domain, cfg.LEEmail); err != nil {
+					utils.Warn("Failed to obtain SSL for %s: %v", domain, err)
+					continue
+				}
 			}
 
 			// Enhance SSL configuration with better security settings
