@@ -1,0 +1,225 @@
+# ====================
+# Go
+# ====================
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+*.coverage
+coverage.html
+coverage.txt
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependency directories (uncomment if vendoring)
+# vendor/
+
+# ====================
+# Build Artifacts
+# ====================
+
+# Distribution directory
+dist/
+build/
+release/
+
+# Binary output
+svp
+svp-*
+!svp-*.md
+
+# Compiled binaries
+main
+cmd/*/main
+
+# ====================
+# Development
+# ====================
+
+# IDE specific files - VSCode
+.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IDE specific files - JetBrains (GoLand, IntelliJ)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# IDE specific files - Vim
+*.swp
+*.swo
+*.swn
+*~
+.vim/
+
+# IDE specific files - Emacs
+\#*\#
+.\#*
+
+# IDE specific files - Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ====================
+# Operating System
+# ====================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+.directory
+.Trash-*
+.nfs*
+
+# ====================
+# Project Specific
+# ====================
+
+# Temporary files
+*.log
+*.tmp
+*.bak
+*.backup
+tmp/
+temp/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.envrc
+
+# Configuration files with secrets (if any)
+config.local.*
+*-local.yml
+*-local.yaml
+secrets.yml
+secrets.yaml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Downloaded dependencies during testing
+composer.phar
+wp-cli.phar
+
+# Test output
+test-results/
+*.prof
+
+# Documentation build artifacts
+docs/_build/
+site/
+
+# ====================
+# CI/CD
+# ====================
+
+# Local CI configuration
+.travis.local.yml
+.gitlab-ci.local.yml
+
+# ====================
+# Archives
+# ====================
+
+# Compressed files
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+*.rar
+*.gz
+*.bz2
+*.xz
+
+# ====================
+# Certificates and Keys
+# ====================
+
+# SSL certificates and private keys
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# ====================
+# Notes and Documentation Drafts
+# ====================
+
+# Personal notes
+TODO.local
+NOTES.local
+notes/
+scratch/
+.notes/
+
+# ====================
+# Ignore the original bash script (already converted)
+# ====================
+
+# Original source files that were converted
+# (uncomment these if you don't want to track them)
+# /setup.sh
+# /instructions.md
+
+# Claude Code Interpreter Generated
+CLAUDE_PROJECT.md
+Capabilities.
