@@ -110,15 +110,20 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		} else {
 			utils.Ok("Composer dependencies installed")
 		}
-	}
 
-	// Install Drush locally
-	utils.Log("Installing Drush...")
-	_, err = utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s composer require drush/drush --no-interaction", composerDir, adminUser))
-	if err != nil {
-		utils.Warn("Failed to install Drush: %v", err)
-	} else {
-		utils.Ok("Drush installed")
+		// Check if Drush is already in composer.json
+		hasDrush, _ := utils.RunShell(fmt.Sprintf("grep -q 'drush/drush' %s && echo 'yes'", composerJSON))
+		if strings.TrimSpace(hasDrush) != "yes" {
+			utils.Log("Installing Drush...")
+			_, err = utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s composer require drush/drush --no-interaction", composerDir, adminUser))
+			if err != nil {
+				utils.Warn("Failed to install Drush: %v", err)
+			} else {
+				utils.Ok("Drush installed")
+			}
+		} else {
+			utils.Verify("Drush already in composer.json")
+		}
 	}
 
 	// Create database
