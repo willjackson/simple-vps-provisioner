@@ -148,6 +148,8 @@ sudo svp -mode verify
 | `-db-engine` | Database engine: `mariadb` or `none` | `mariadb` |
 | `-create-swap` | Create swap: `yes`, `no`, or `auto` | `auto` |
 | `-firewall` | Enable UFW firewall | `true` |
+| `-ssl` | Enable SSL/HTTPS with Let's Encrypt | `true` |
+| `-le-email` | Let's Encrypt email (required for SSL) | - |
 | `-debug` | Enable debug mode | `false` |
 
 ## What Gets Installed
@@ -159,8 +161,9 @@ sudo svp -mode verify
 3. **PHP-FPM**: PHP 8.3 (or specified version) with extensions
 4. **MariaDB**: Database server
 5. **Composer**: PHP dependency manager
-6. **WP-CLI**: WordPress CLI (for WordPress installations)
-7. **UFW Firewall**: Configured for HTTP, HTTPS, SSH
+6. **Certbot**: Let's Encrypt SSL certificates (if `-le-email` provided)
+7. **WP-CLI**: WordPress CLI (for WordPress installations)
+8. **UFW Firewall**: Configured for HTTP, HTTPS, SSH
 
 ### Per-Domain Configuration
 
@@ -234,6 +237,45 @@ This creates three separate environments, each with:
 sudo svp -mode setup -cms drupal \
   -domain example.com \
   -php-version 8.4
+```
+
+### Example 5: Install with SSL/HTTPS
+
+```bash
+# Drupal with automatic SSL certificate
+sudo svp -mode setup -cms drupal \
+  -domain mysite.com \
+  -le-email admin@mysite.com
+```
+
+This will:
+- Install and configure certbot
+- Obtain Let's Encrypt SSL certificate
+- Configure nginx with HTTPS (port 443)
+- Redirect HTTP to HTTPS automatically
+- Enable HSTS, OCSP stapling, and TLS 1.2/1.3
+- Setup automatic certificate renewal
+
+After completion, visit `https://mysite.com` (note the **https**)
+
+### Example 6: Multiple Domains with SSL
+
+```bash
+sudo svp -mode setup -cms wordpress \
+  -domain example.com \
+  -extra-domains "www.example.com,blog.example.com" \
+  -le-email webmaster@example.com
+```
+
+Each domain gets its own SSL certificate.
+
+### Example 7: Install without SSL
+
+```bash
+# Disable SSL (HTTP only)
+sudo svp -mode setup -cms drupal \
+  -domain mysite.com \
+  -ssl=false
 ```
 
 ## CMS-Specific Information
@@ -314,6 +356,9 @@ tail -f /var/log/nginx/[domain]-error.log
 
 # PHP-FPM logs
 tail -f /var/log/php8.3-fpm-[domain]-error.log
+
+# Certbot logs
+tail -f /var/log/letsencrypt/letsencrypt.log
 ```
 
 ### Verify configuration
@@ -321,13 +366,67 @@ tail -f /var/log/php8.3-fpm-[domain]-error.log
 sudo svp -mode verify
 ```
 
+### SSL Certificate Issues
+
+#### Check certificate status
+```bash
+# List all certificates
+sudo certbot certificates
+
+# Check specific domain
+sudo certbot certificates -d example.com
+```
+
+#### Test certificate renewal
+```bash
+# Dry run (test without actually renewing)
+sudo certbot renew --dry-run
+
+# Force renewal
+sudo certbot renew --force-renewal
+```
+
+#### Certificate not obtained
+**Common causes:**
+- Domain doesn't point to server IP yet (DNS propagation)
+- Firewall blocking port 80 or 443
+- No email provided (`-le-email` flag)
+- Rate limit reached (5 certificates per week for same domain)
+
+**Check DNS:**
+```bash
+dig +short example.com
+# Should return your server IP
+```
+
+**Check nginx configuration:**
+```bash
+sudo nginx -t
+sudo systemctl status nginx
+```
+
+#### Renew expired certificate
+```bash
+sudo certbot renew
+sudo systemctl reload nginx
+```
+
+#### Remove certificate
+```bash
+sudo certbot delete --cert-name example.com
+```
+
 ## Security Notes
 
 1. **Database credentials** are automatically generated and saved securely
 2. **Firewall** is enabled by default (SSH, HTTP, HTTPS)
-3. **PHP settings** are hardened (disabled dangerous functions, etc.)
-4. **File permissions** are set appropriately (admin:www-data)
-5. **Per-site isolation** via separate PHP-FPM pools
+3. **SSL/HTTPS** - Free Let's Encrypt certificates with automatic renewal
+4. **HSTS** - HTTP Strict Transport Security enabled
+5. **TLS 1.2/1.3** - Modern encryption protocols only
+6. **OCSP Stapling** - Improved SSL performance and privacy
+7. **PHP settings** are hardened (disabled dangerous functions, etc.)
+8. **File permissions** are set appropriately (admin:www-data)
+9. **Per-site isolation** via separate PHP-FPM pools
 
 ## Adaptability to Other Distributions
 
