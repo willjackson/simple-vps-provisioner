@@ -127,6 +127,14 @@ func CreatePHPPool(domain, version, webroot string) error {
 	poolFile := fmt.Sprintf("/etc/php/%s/fpm/pool.d/%s.conf", version, domain)
 	socketPath := fmt.Sprintf("/run/php/php%s-fpm-%s.sock", version, domain)
 
+	// For open_basedir, use the project root (parent of webroot if it ends with /web)
+	// This allows access to vendor/ directory
+	projectRoot := webroot
+	if strings.HasSuffix(webroot, "/web") {
+		// Get parent directory (removes /web)
+		projectRoot = webroot[:len(webroot)-4]
+	}
+
 	poolConfig := fmt.Sprintf(`; PHP-FPM pool for %s
 [%s]
 user = www-data
@@ -159,7 +167,7 @@ php_admin_value[memory_limit] = 512M
 php_admin_value[open_basedir] = %s:/tmp:/usr/share/php
 php_admin_value[upload_tmp_dir] = /tmp
 php_admin_value[session.save_path] = /tmp
-`, domain, domain, socketPath, version, domain, webroot)
+`, domain, domain, socketPath, version, domain, projectRoot)
 
 	if utils.CheckFileExists(poolFile) {
 		utils.Verify("PHP pool already exists for %s", domain)

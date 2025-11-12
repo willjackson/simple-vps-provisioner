@@ -9,8 +9,8 @@ import (
 // EnsureAdminSSHKey ensures admin user has SSH key and GitHub is in known_hosts
 func EnsureAdminSSHKey(adminUser string) error {
 	sshDir := fmt.Sprintf("/home/%s/.ssh", adminUser)
-	keyPath := fmt.Sprintf("%s/id_ed25519", sshDir)
-	pubKeyPath := fmt.Sprintf("%s/id_ed25519.pub", keyPath)
+	keyPath := fmt.Sprintf("%s/id_rsa", sshDir)
+	pubKeyPath := fmt.Sprintf("%s.pub", keyPath)
 	knownHostsPath := fmt.Sprintf("%s/known_hosts", sshDir)
 
 	// Ensure .ssh directory exists
@@ -27,8 +27,8 @@ func EnsureAdminSSHKey(adminUser string) error {
 	if !utils.CheckFileExists(keyPath) {
 		utils.Log("Generating SSH key for %s...", adminUser)
 		
-		// Generate ED25519 key
-		cmd := fmt.Sprintf("sudo -u %s ssh-keygen -t ed25519 -f %s -N '' -C '%s@vps'", adminUser, keyPath, adminUser)
+		// Generate RSA 4096 key
+		cmd := fmt.Sprintf("sudo -u %s ssh-keygen -t rsa -b 4096 -f %s -N '' -C '%s@vps'", adminUser, keyPath, adminUser)
 		_, err := utils.RunShell(cmd)
 		if err != nil {
 			return fmt.Errorf("failed to generate SSH key: %v", err)
