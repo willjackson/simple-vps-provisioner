@@ -208,6 +208,15 @@ $settings['hash_salt'] = '%s';
 		_, _ = utils.RunCommand("chmod", "555", sitesDefaultDir)
 
 		utils.Ok("settings.php created")
+		
+		// Create public files directory
+		filesDir := filepath.Join(sitesDefaultDir, "files")
+		if err := utils.EnsureDir(filesDir); err != nil {
+			return fmt.Errorf("failed to create files directory: %v", err)
+		}
+		_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), filesDir)
+		_, _ = utils.RunCommand("chmod", "775", filesDir)
+		utils.Ok("Public files directory created")
 	} else {
 		utils.Verify("settings.php already exists")
 	}
@@ -219,34 +228,37 @@ $settings['hash_salt'] = '%s';
 	return nil
 }
 
-// CreateDrushWrapper creates a Drush wrapper script for a domain
-func CreateDrushWrapper(domain, projectDir string) error {
-	wrapperPath := fmt.Sprintf("/usr/local/bin/drush-%s", domain)
-
-	wrapperScript := fmt.Sprintf(`#!/bin/bash
-# Drush wrapper for %s
-cd %s || exit 1
-exec ./vendor/bin/drush "$@"
-`, domain, projectDir)
-
-	if utils.CheckFileExists(wrapperPath) {
-		utils.Verify("Drush wrapper already exists for %s", domain)
-		return nil
+// CreateDrushAlias creates a Drush site alias
+func CreateDrushAlias(domain, projectDir, adminUser string) error {
+	aliasDir := "/etc/drush/sites"
+	if err := utils.EnsureDir(aliasDir); err != nil {
+		return fmt.Errorf("failed to create alias directory: %v", err)
 	}
 
-	utils.Log("Creating Drush wrapper for %s", domain)
+	// Sanitize domain for alias name (replace dots with underscores)
+	aliasName := strings.ReplaceAll(domain, ".", "_")
+	aliasFile := filepath.Join(aliasDir, fmt.Sprintf("%s.site.yml", aliasName))
 
-	_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", wrapperPath, wrapperScript))
+	// Drush 9+ YAML alias format
+	aliasContent := fmt.Sprintf(`# Drush alias for %s
+%s:
+  root: %s/web
+  uri: http://%s
+  user: %s
+`, domain, aliasName, projectDir, domain, adminUser)
+
+	if utils.CheckFileExists(aliasFile) {
+		utils.Log("Updating Drush alias for %s", domain)
+	} else {
+		utils.Log("Creating Drush alias for %s", domain)
+	}
+
+	err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", aliasFile, aliasContent))
 	if err != nil {
-		return fmt.Errorf("failed to create Drush wrapper: %v", err)
+		return fmt.Errorf("failed to create alias: %v", err)
 	}
 
-	_, err = utils.RunCommand("chmod", "+x", wrapperPath)
-	if err != nil {
-		return fmt.Errorf("failed to make Drush wrapper executable: %v", err)
-	}
-
-	utils.Ok("Drush wrapper created: drush-%s", domain)
+	utils.Ok("Drush alias: @%s", aliasName)
 	return nil
 }
 
@@ -254,4 +266,58 @@ exec ./vendor/bin/drush "$@"
 func generateHashSalt() string {
 	salt, _ := database.GeneratePassword(64)
 	return salt
+}
+
+// InstallDrupalSite runs drush site-install if needed
+func InstallDrupalSite(domain, projectDir, adminUser string) error {
+	aliasName := strings.ReplaceAll(domain, ".", "_")
+	
+	// Check if Drupal is already installed
+	output, err := utils.RunShell(fmt.Sprintf("drush @%s status --field=bootstrap 2>/dev/null", aliasName))
+	if err == nil && strings.Contains(output, "Successful") {
+		utils.Verify("Drupal already installed")
+		return nil
+	}
+
+	utils.Log("Installing Drupal via drush site-install...")
+	
+	cmd := fmt.Sprintf("drush @%s site-install minimal -y --account-name=admin --account-pass=admin", aliasName)
+	_, err = utils.RunShell(cmd)
+	if err != nil {
+		return fmt.Errorf("drush site-install failed: %v", err)
+	}
+	
+	utils.Ok("Drupal site installed")
+	return nil
+}
+
+// ImportDrupalConfig imports configuration via drush cim
+func ImportDrupalConfig(domain, projectDir, adminUser string) error {
+	aliasName := strings.ReplaceAll(domain, ".", "_")
+	
+	// Check if config/sync directory exists
+	configDir := filepath.Join(projectDir, "config/sync")
+	if !utils.CheckDirExists(configDir) {
+		utils.Skip("No config/sync directory found, skipping config import")
+		return nil
+	}
+	
+	// Check if config directory has files
+	output, err := utils.RunShell(fmt.Sprintf("ls -A %s | wc -l", configDir))
+	if err != nil || strings.TrimSpace(output) == "0" {
+		utils.Skip("Config directory empty, skipping config import")
+		return nil
+	}
+	
+	utils.Log("Importing Drupal configuration...")
+	
+	cmd := fmt.Sprintf("drush @%s config-import -y", aliasName)
+	_, err = utils.RunShell(cmd)
+	if err != nil {
+		utils.Warn("Config import failed: %v", err)
+		return nil
+	}
+	
+	utils.Ok("Configuration imported")
+	return nil
 }

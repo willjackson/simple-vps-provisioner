@@ -171,14 +171,47 @@ func FullSetup(cfg *types.Config) error {
 			return err
 		}
 
-		// Create Drush wrapper for Drupal
+		// Create Drush alias for Drupal
 		if cfg.CMS == "drupal" {
 			drushDir := domainDir
 			if cfg.DrupalRoot != "" {
 				drushDir = filepath.Join(drushDir, cfg.DrupalRoot)
+			} else {
+				// Auto-detect composer.json location
+				for _, subdir := range []string{"drupal", "app", "backend"} {
+					potentialPath := filepath.Join(domainDir, subdir)
+					if utils.CheckFileExists(filepath.Join(potentialPath, "composer.json")) {
+						drushDir = potentialPath
+						break
+					}
+				}
 			}
-			if err := cms.CreateDrushWrapper(domain, drushDir); err != nil {
-				utils.Warn("Failed to create Drush wrapper: %v", err)
+			
+			// Get admin user
+			adminUser := "admin"
+			output, err := utils.RunShell("getent group www-data | cut -d: -f4")
+			if err == nil {
+				members := strings.Split(strings.TrimSpace(output), ",")
+				for _, member := range members {
+					if member != "" && member != "www-data" {
+						adminUser = member
+						break
+					}
+				}
+			}
+			
+			if err := cms.CreateDrushAlias(domain, drushDir, adminUser); err != nil {
+				utils.Warn("Failed to create Drush alias: %v", err)
+			}
+			
+			// Install Drupal site if not already installed
+			if err := cms.InstallDrupalSite(domain, drushDir, adminUser); err != nil {
+				utils.Warn("Failed to install Drupal site: %v", err)
+			}
+			
+			// Import configuration if available
+			if err := cms.ImportDrupalConfig(domain, drushDir, adminUser); err != nil {
+				utils.Warn("Failed to import configuration: %v", err)
 			}
 		}
 	}
