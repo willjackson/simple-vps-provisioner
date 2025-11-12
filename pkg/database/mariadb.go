@@ -95,7 +95,7 @@ func CreateDatabase(domain string, sitesDir string) (dbName, dbUser, dbPass stri
 	utils.Log("Creating database and user for %s...", domain)
 
 	// Create database
-	createDBSQL := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS \\`%s\\` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;", dbName)
+	createDBSQL := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;", dbName)
 	_, err = utils.RunShell(fmt.Sprintf("mariadb -e '%s'", createDBSQL))
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to create database: %v", err)
@@ -109,7 +109,7 @@ func CreateDatabase(domain string, sitesDir string) (dbName, dbUser, dbPass stri
 		return "", "", "", fmt.Errorf("failed to create database user: %v", err)
 	}
 
-	grantSQL := fmt.Sprintf("GRANT ALL PRIVILEGES ON \\`%s\\`.* TO '%s'@'localhost'; FLUSH PRIVILEGES;", dbName, dbUser)
+	grantSQL := fmt.Sprintf("GRANT ALL PRIVILEGES ON %s.* TO '%s'@'localhost'; FLUSH PRIVILEGES;", dbName, dbUser)
 	_, err = utils.RunShell(fmt.Sprintf("mariadb -e '%s'", grantSQL))
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to grant privileges: %v", err)
