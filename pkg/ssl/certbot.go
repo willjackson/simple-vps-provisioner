@@ -45,7 +45,8 @@ func ObtainCertificate(domain, email string) error {
 
 	utils.Log("Obtaining SSL certificate for %s", domain)
 
-	cmd := fmt.Sprintf("certbot --nginx -d %s --non-interactive --agree-tos --email %s --redirect", domain, email)
+	// Use certbot with nginx plugin
+	cmd := fmt.Sprintf("certbot --nginx -d %s --non-interactive --agree-tos --email %s --redirect --no-eff-email", domain, email)
 	_, err := utils.RunShell(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to obtain certificate: %v", err)

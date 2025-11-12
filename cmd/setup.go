@@ -103,13 +103,24 @@ func FullSetup(cfg *types.Config) error {
 		}
 	}
 
+	// Resolve database import path to absolute path
+	dbImportPath := cfg.DBImport
+	if dbImportPath != "" && !filepath.IsAbs(dbImportPath) {
+		var err error
+		dbImportPath, err = filepath.Abs(dbImportPath)
+		if err != nil {
+			return fmt.Errorf("failed to resolve database path: %v", err)
+		}
+		utils.Log("Resolved database path: %s", dbImportPath)
+	}
+
 	utils.Section(fmt.Sprintf("%s Installations", strings.Title(cfg.CMS)))
 	fmt.Printf("Installing %s for domains: %s\n", cfg.CMS, strings.Join(domains, ", "))
 
 	for _, domain := range domains {
 		if cfg.CMS == "drupal" {
 			err := cms.InstallDrupal(domain, cfg.Webroot, cfg.GitRepo, cfg.GitBranch,
-				cfg.DrupalRoot, cfg.Docroot, config.SitesDir, cfg.DBImport)
+				cfg.DrupalRoot, cfg.Docroot, config.SitesDir, dbImportPath)
 			if err != nil {
 				return fmt.Errorf("failed to install Drupal for %s: %v", domain, err)
 			}
@@ -206,12 +217,12 @@ func FullSetup(cfg *types.Config) error {
 			}
 			
 			// Install Drupal site if not already installed
-			if err := cms.InstallDrupalSite(domain, drushDir, adminUser, cfg.DBImport); err != nil {
+			if err := cms.InstallDrupalSite(domain, drushDir, adminUser, dbImportPath); err != nil {
 				utils.Warn("Failed to install Drupal site: %v", err)
 			}
 			
-			// Import configuration if available
-			if err := cms.ImportDrupalConfig(domain, drushDir, adminUser, cfg.DBImport != ""); err != nil {
+			// Import configuration if available (skip if database was imported)
+			if err := cms.ImportDrupalConfig(domain, drushDir, adminUser, dbImportPath != ""); err != nil {
 				utils.Warn("Failed to import configuration: %v", err)
 			}
 		}
@@ -257,8 +268,8 @@ func FullSetup(cfg *types.Config) error {
 			certPath := fmt.Sprintf("/etc/letsencrypt/live/%s/fullchain.pem", domain)
 			if utils.CheckFileExists(certPath) {
 				utils.Log("Reconfiguring nginx with existing SSL certificate for %s", domain)
-				// Run certbot again to reconfigure nginx (since we recreated vhost)
-				cmd := fmt.Sprintf("certbot --nginx -d %s --non-interactive --redirect", domain)
+				// Use certbot install to reconfigure nginx (since we recreated vhost)
+				cmd := fmt.Sprintf("certbot install --nginx --cert-name %s --non-interactive --redirect", domain)
 				if _, err := utils.RunShell(cmd); err != nil {
 					utils.Warn("Failed to reconfigure SSL for %s: %v", domain, err)
 					continue
