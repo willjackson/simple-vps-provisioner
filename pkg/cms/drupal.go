@@ -253,7 +253,7 @@ func CreateDrushAlias(domain, projectDir, adminUser string) error {
 		utils.Log("Creating Drush alias for %s", domain)
 	}
 
-	err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", aliasFile, aliasContent))
+	_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", aliasFile, aliasContent))
 	if err != nil {
 		return fmt.Errorf("failed to create alias: %v", err)
 	}
@@ -282,7 +282,7 @@ func InstallDrupalSite(domain, projectDir, adminUser string) error {
 	utils.Log("Installing Drupal via drush site-install...")
 	
 	cmd := fmt.Sprintf("drush @%s site-install minimal -y --account-name=admin --account-pass=admin", aliasName)
-	output2, err2 := utils.RunShell(cmd)
+	_, err2 := utils.RunShell(cmd)
 	if err2 != nil {
 		return fmt.Errorf("drush site-install failed: %v", err2)
 	}
@@ -312,7 +312,7 @@ func ImportDrupalConfig(domain, projectDir, adminUser string) error {
 	utils.Log("Importing Drupal configuration...")
 	
 	cmd := fmt.Sprintf("drush @%s config-import -y", aliasName)
-	output2, err2 := utils.RunShell(cmd)
+	_, err2 := utils.RunShell(cmd)
 	if err2 != nil {
 		utils.Warn("Config import failed: %v", err2)
 		return nil
