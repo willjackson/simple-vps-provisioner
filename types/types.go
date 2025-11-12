@@ -38,6 +38,9 @@ type Config struct {
 	// Database engine: "mariadb" or "none"
 	DBEngine string
 
+	// Database import file path
+	DBImport string
+
 	// Whether to create swap
 	CreateSwap string // "yes", "no", or "auto"
 

@@ -109,7 +109,7 @@ func FullSetup(cfg *types.Config) error {
 	for _, domain := range domains {
 		if cfg.CMS == "drupal" {
 			err := cms.InstallDrupal(domain, cfg.Webroot, cfg.GitRepo, cfg.GitBranch,
-				cfg.DrupalRoot, cfg.Docroot, config.SitesDir)
+				cfg.DrupalRoot, cfg.Docroot, config.SitesDir, cfg.DBImport)
 			if err != nil {
 				return fmt.Errorf("failed to install Drupal for %s: %v", domain, err)
 			}
@@ -206,12 +206,12 @@ func FullSetup(cfg *types.Config) error {
 			}
 			
 			// Install Drupal site if not already installed
-			if err := cms.InstallDrupalSite(domain, drushDir, adminUser); err != nil {
+			if err := cms.InstallDrupalSite(domain, drushDir, adminUser, cfg.DBImport); err != nil {
 				utils.Warn("Failed to install Drupal site: %v", err)
 			}
 			
 			// Import configuration if available
-			if err := cms.ImportDrupalConfig(domain, drushDir, adminUser); err != nil {
+			if err := cms.ImportDrupalConfig(domain, drushDir, adminUser, cfg.DBImport != ""); err != nil {
 				utils.Warn("Failed to import configuration: %v", err)
 			}
 		}

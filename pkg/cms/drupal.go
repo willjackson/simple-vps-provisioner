@@ -9,7 +9,7 @@ import (
 )
 
 // InstallDrupal installs a Drupal site for a domain
-func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot string, sitesDir string) error {
+func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot string, sitesDir string, dbImport string) error {
 	utils.Section("Installing Drupal for " + domain)
 
 	// Get admin username from www-data group
@@ -335,8 +335,8 @@ func generateHashSalt() string {
 	return salt
 }
 
-// InstallDrupalSite runs drush site-install if needed
-func InstallDrupalSite(domain, projectDir, adminUser string) error {
+// InstallDrupalSite runs drush site-install if needed or imports database
+func InstallDrupalSite(domain, projectDir, adminUser, dbImport string) error {
 	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
 
 	if !utils.CheckFileExists(drushPath) {
@@ -351,6 +351,54 @@ func InstallDrupalSite(domain, projectDir, adminUser string) error {
 		return nil
 	}
 
+	// Import database if provided
+	if dbImport != "" {
+		if !utils.CheckFileExists(dbImport) {
+			return fmt.Errorf("database file not found: %s", dbImport)
+		}
+		
+		utils.Log("Importing database from %s...", dbImport)
+		
+		// Get database credentials
+		dbCredsFile := fmt.Sprintf("/etc/simple-host-manager/sites/%s.db.txt", domain)
+		if !utils.CheckFileExists(dbCredsFile) {
+			return fmt.Errorf("database credentials file not found: %s", dbCredsFile)
+		}
+		
+		dbCreds, err := utils.RunShell(fmt.Sprintf("cat %s", dbCredsFile))
+		if err != nil {
+			return fmt.Errorf("failed to read database credentials: %v", err)
+		}
+		
+		// Parse credentials
+		lines := strings.Split(dbCreds, "\n")
+		var dbName, dbUser, dbPass string
+		for _, line := range lines {
+			if strings.HasPrefix(line, "Database:") {
+				dbName = strings.TrimSpace(strings.TrimPrefix(line, "Database:"))
+			} else if strings.HasPrefix(line, "User:") {
+				dbUser = strings.TrimSpace(strings.TrimPrefix(line, "User:"))
+			} else if strings.HasPrefix(line, "Password:") {
+				dbPass = strings.TrimSpace(strings.TrimPrefix(line, "Password:"))
+			}
+		}
+		
+		if dbName == "" || dbUser == "" || dbPass == "" {
+			return fmt.Errorf("failed to parse database credentials")
+		}
+		
+		// Import database
+		cmd := fmt.Sprintf("mysql -u%s -p%s %s < %s", dbUser, dbPass, dbName, dbImport)
+		_, err = utils.RunShell(cmd)
+		if err != nil {
+			return fmt.Errorf("database import failed: %v", err)
+		}
+		
+		utils.Ok("Database imported successfully")
+		return nil
+	}
+
+	// Fresh install with site-install
 	utils.Log("Installing Drupal via drush site-install...")
 
 	cmd := fmt.Sprintf("cd %s && sudo -u %s %s site-install minimal -y --account-name=admin --account-pass=admin", projectDir, adminUser, drushPath)
@@ -364,7 +412,7 @@ func InstallDrupalSite(domain, projectDir, adminUser string) error {
 }
 
 // ImportDrupalConfig imports configuration via drush cim
-func ImportDrupalConfig(domain, projectDir, adminUser string) error {
+func ImportDrupalConfig(domain, projectDir, adminUser string, hasDBImport bool) error {
 	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
 
 	if !utils.CheckFileExists(drushPath) {
@@ -380,7 +428,8 @@ func ImportDrupalConfig(domain, projectDir, adminUser string) error {
 	}
 
 	// Check if config directory has actual config files (look for .yml files)
-	output, err := utils.RunShell(fmt.Sprintf("ls -A %s 2>/dev/null | grep -E '\\.yml$' | wc -l", configDir))
+	output, err := utils.RunShell(fmt.Sprintf("ls -A %s 2>/dev/null | grep -E '\\.yml
+ | wc -l", configDir))
 	if err != nil {
 		utils.Skip("Cannot check config directory, skipping config import")
 		return nil
@@ -390,6 +439,31 @@ func ImportDrupalConfig(domain, projectDir, adminUser string) error {
 	if ymlCount == "0" || ymlCount == "" {
 		utils.Skip("No YAML config files found in config/sync, skipping config import")
 		return nil
+	}
+
+	// If we did site-install (not database import), get UUID from config and set it in DB
+	if !hasDBImport {
+		utils.Log("Getting UUID from config...")
+		
+		// Check if system.site.yml exists in config
+		systemSiteConfig := filepath.Join(configDir, "system.site.yml")
+		if utils.CheckFileExists(systemSiteConfig) {
+			// Extract UUID from system.site.yml
+			uuidOutput, err := utils.RunShell(fmt.Sprintf("grep '^uuid:' %s | awk '{print $2}'", systemSiteConfig))
+			if err == nil && strings.TrimSpace(uuidOutput) != "" {
+				configUUID := strings.TrimSpace(uuidOutput)
+				utils.Log("Setting site UUID to match config: %s", configUUID)
+				
+				// Set the UUID in the database
+				cmd := fmt.Sprintf("cd %s && sudo -u %s %s config:set system.site uuid %s -y", projectDir, adminUser, drushPath, configUUID)
+				_, err = utils.RunShell(cmd)
+				if err != nil {
+					utils.Warn("Failed to set UUID: %v", err)
+				} else {
+					utils.Ok("UUID set successfully")
+				}
+			}
+		}
 	}
 
 	utils.Log("Importing Drupal configuration (%s config files)...", ymlCount)

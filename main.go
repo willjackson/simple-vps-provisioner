@@ -31,6 +31,7 @@ func main() {
 	flag.StringVar(&cfg.DrupalRoot, "drupal-root", "", "Drupal root path (relative to repo)")
 	flag.StringVar(&cfg.Docroot, "docroot", "", "Custom docroot path")
 	flag.StringVar(&cfg.DBEngine, "db-engine", "mariadb", "Database engine: mariadb or none")
+	flag.StringVar(&cfg.DBImport, "db", "", "Path to database file for import (instead of site-install)")
 	flag.StringVar(&cfg.CreateSwap, "create-swap", "auto", "Create swap: yes, no, or auto")
 	flag.BoolVar(&cfg.UFWEnable, "firewall", true, "Enable UFW firewall")
 	flag.BoolVar(&cfg.SSLEnable, "ssl", true, "Enable SSL/HTTPS with Let's Encrypt (requires -le-email)")
