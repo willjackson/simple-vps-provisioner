@@ -60,9 +60,9 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 	if gitRepo != "" {
 		utils.Log("Cloning Git repository: %s (branch: %s)", gitRepo, gitBranch)
 
-		// Clone repository
+		// Clone repository as admin user
 		if !utils.CheckDirExists(filepath.Join(domainDir, ".git")) {
-			_, err := utils.RunCommand("git", "clone", "-b", gitBranch, gitRepo, domainDir)
+			_, err := utils.RunShell(fmt.Sprintf("sudo -u %s git clone -b %s %s %s", adminUser, gitBranch, gitRepo, domainDir))
 			if err != nil {
 				return fmt.Errorf("failed to clone repository: %v", err)
 			}
