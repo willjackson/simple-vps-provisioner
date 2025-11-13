@@ -73,10 +73,17 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 	}
 
 	// Download and install GPG key (with --yes to overwrite without prompting)
+	utils.Log("Downloading Sury GPG key...")
 	_, err = utils.RunShell("curl -fsSL https://packages.sury.org/php/apt.gpg | gpg --dearmor --yes -o /usr/share/keyrings/sury-keyring.gpg")
 	if err != nil {
 		return fmt.Errorf("failed to download GPG key: %v", err)
 	}
+
+	// Verify GPG key was installed
+	if !utils.CheckFileExists("/usr/share/keyrings/sury-keyring.gpg") {
+		return fmt.Errorf("GPG key file not created at /usr/share/keyrings/sury-keyring.gpg")
+	}
+	utils.Ok("Sury GPG key installed")
 
 	// Detect OS distribution (Debian or Ubuntu)
 	distroID, err := utils.RunShell("lsb_release -si")
@@ -91,6 +98,12 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 		return fmt.Errorf("failed to get distribution codename: %v", err)
 	}
 	codename = strings.TrimSpace(codename)
+
+	// Also get version ID from os-release for better validation
+	versionID := ""
+	if vid, err := utils.RunShell("grep '^VERSION_ID=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '\"'"); err == nil {
+		versionID = strings.TrimSpace(vid)
+	}
 
 	// Verify OS detection - cross-check with /etc/os-release if available
 	// This helps catch misconfigurations where lsb_release reports wrong info
@@ -111,7 +124,26 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 		}
 	}
 
-	utils.Log("Detected %s %s", distroID, codename)
+	// Display detection results
+	if versionID != "" {
+		utils.Log("Detected %s %s (version %s)", distroID, codename, versionID)
+	} else {
+		utils.Log("Detected %s %s", distroID, codename)
+	}
+
+	// Validate codename looks reasonable (should be alphabetic)
+	if codename == "" || !isValidCodename(codename) {
+		utils.Warn("Invalid or unusual codename detected: '%s'", codename)
+		utils.Log("This may indicate a system configuration issue or unsupported distribution")
+		
+		// Try to map version ID to codename for Ubuntu
+		if strings.ToLower(distroID) == "ubuntu" && versionID != "" {
+			if mappedCodename := mapUbuntuVersionToCodename(versionID); mappedCodename != "" {
+				utils.Log("Mapping Ubuntu version %s to codename: %s", versionID, mappedCodename)
+				codename = mappedCodename
+			}
+		}
+	}
 
 	// For Debian testing/unstable (trixie, sid, forky), use native Debian packages
 	// These versions have recent PHP in their main repos and Sury packages
@@ -142,10 +174,47 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 		return fmt.Errorf("failed to add repository: %v", err)
 	}
 
-	// Update package lists
-	_, err = utils.RunCommand("apt-get", "update")
-	if err != nil {
-		return fmt.Errorf("failed to update package lists: %v", err)
+	// Update package lists with retry logic
+	utils.Log("Updating package lists...")
+	maxRetries := 3
+	var updateErr error
+	for i := 0; i < maxRetries; i++ {
+		if i > 0 {
+			utils.Warn("Retry %d/%d: Updating package lists...", i, maxRetries-1)
+		}
+		
+		output, err := utils.RunCommand("apt-get", "update")
+		if err == nil {
+			updateErr = nil
+			break
+		}
+		
+		updateErr = err
+		
+		// Check for specific error patterns
+		if strings.Contains(output, "418") || strings.Contains(output, "I'm a teapot") {
+			utils.Warn("Received HTTP 418 error from Sury repository")
+			utils.Warn("This typically indicates rate limiting or temporary blocking")
+			utils.Warn("Waiting 10 seconds before retry...")
+			_, _ = utils.RunShell("sleep 10")
+			continue
+		}
+		
+		if strings.Contains(output, "not signed") || strings.Contains(output, "NO_PUBKEY") {
+			utils.Warn("Repository signing key issue detected")
+			utils.Warn("Attempting to reinstall GPG key...")
+			_, _ = utils.RunShell("curl -fsSL https://packages.sury.org/php/apt.gpg | gpg --dearmor --yes -o /usr/share/keyrings/sury-keyring.gpg")
+			continue
+		}
+		
+		// For other errors, wait briefly before retry
+		if i < maxRetries-1 {
+			_, _ = utils.RunShell("sleep 5")
+		}
+	}
+	
+	if updateErr != nil {
+		return fmt.Errorf("failed to update package lists after %d attempts: %v\n\nTroubleshooting steps:\n  1. Check network connectivity: ping packages.sury.org\n  2. Try again in a few minutes (may be rate limited)\n  3. Check if IP is blocked: curl -I https://packages.sury.org/php/\n  4. Consider using native distribution packages if available", maxRetries, updateErr)
 	}
 
 	utils.Ok("Sury PHP repository added")
@@ -193,6 +262,38 @@ func EnsureBasePackages(verifyOnly bool) error {
 	}
 
 	return nil
+}
+
+// isValidCodename checks if a codename looks reasonable (alphabetic characters)
+func isValidCodename(codename string) bool {
+	if codename == "" {
+		return false
+	}
+	// Should be lowercase alphabetic characters only
+	for _, c := range codename {
+		if (c < 'a' || c > 'z') && c != '-' {
+			return false
+		}
+	}
+	return true
+}
+
+// mapUbuntuVersionToCodename maps Ubuntu version numbers to codenames
+func mapUbuntuVersionToCodename(versionID string) string {
+	versionMap := map[string]string{
+		"24.04": "noble",
+		"23.10": "mantic",
+		"23.04": "lunar",
+		"22.10": "kinetic",
+		"22.04": "jammy",
+		"20.04": "focal",
+		"18.04": "bionic",
+	}
+	
+	if codename, ok := versionMap[versionID]; ok {
+		return codename
+	}
+	return ""
 }
 
 // getSupportedSuryCodename maps Debian/Ubuntu codenames to Sury-supported versions
