@@ -544,7 +544,7 @@ func InstallDrupalSite(domain, projectDir, adminUser, dbImport, sitesDir string)
 	// Construct database URL: mysql://user:pass@host/dbname
 	dbURL := fmt.Sprintf("mysql://%s:%s@localhost/%s", dbUser, dbPass, dbName)
 
-	cmd := fmt.Sprintf("cd %s && sudo -u %s %s site-install minimal -y --account-name=admin --account-pass=admin --db-url='%s'", projectDir, adminUser, drushPath, dbURL)
+	cmd := fmt.Sprintf("cd %s && sudo -u %s %s site-install standard -y --account-name=admin --account-pass=admin --site-name='%s' --db-url='%s'", projectDir, adminUser, drushPath, domain, dbURL)
 	_, err = utils.RunShell(cmd)
 	if err != nil {
 		return fmt.Errorf("drush site-install failed: %v", err)
@@ -619,4 +619,22 @@ func ImportDrupalConfig(domain, projectDir, adminUser string, hasDBImport bool) 
 
 	utils.Ok("Configuration imported")
 	return nil
+}
+
+// GetDrupalLoginLink generates and returns a one-time login link using drush uli
+func GetDrupalLoginLink(projectDir, adminUser string) (string, error) {
+	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
+	
+	if !utils.CheckFileExists(drushPath) {
+		return "", fmt.Errorf("drush not found")
+	}
+	
+	// Run drush uli to get login link
+	cmd := fmt.Sprintf("cd %s && sudo -u %s %s uli", projectDir, adminUser, drushPath)
+	output, err := utils.RunShell(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate login link: %v", err)
+	}
+	
+	return strings.TrimSpace(output), nil
 }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"svp/pkg/config"
 	"svp/pkg/system"
 	"svp/pkg/utils"
@@ -75,6 +76,22 @@ func PHPUpdate(cfg *types.Config) error {
 		return fmt.Errorf("failed to create PHP-FPM pool: %v", err)
 	}
 
+	// Socket path will be used for verification
+	socketPath := fmt.Sprintf("/run/php/php%s-fpm-%s.sock", newPHPVersion, domain)
+
+	// Verify new PHP-FPM service is running
+	utils.Section("Verifying PHP-FPM Service")
+	newServiceName := fmt.Sprintf("php%s-fpm", newPHPVersion)
+	if err := system.EnsureServiceRunning(newServiceName, false); err != nil {
+		return fmt.Errorf("new PHP-FPM service is not running: %v", err)
+	}
+
+	// Verify the socket file exists
+	if !utils.CheckFileExists(socketPath) {
+		return fmt.Errorf("PHP-FPM socket not found: %s", socketPath)
+	}
+	utils.Ok("PHP-FPM socket verified: %s", socketPath)
+
 	// Update Nginx snippets for new PHP version if needed
 	utils.Section("Updating Nginx Configuration")
 	if err := web.EnsureSnippets(newPHPVersion); err != nil {
@@ -92,6 +109,12 @@ func PHPUpdate(cfg *types.Config) error {
 		return fmt.Errorf("failed to update site config: %v", err)
 	}
 	utils.Ok("Site configuration updated")
+
+	// Check and fix database host configuration before reloading
+	utils.Section("Checking Database Configuration")
+	if err := fixDatabaseHost(domain, siteConfig.Webroot); err != nil {
+		utils.Warn("Could not check database configuration: %v", err)
+	}
 
 	// Test and reload Nginx
 	utils.Section("Reloading Nginx")
@@ -128,8 +151,106 @@ func PHPUpdate(cfg *types.Config) error {
 	fmt.Printf("Old PHP Version: %s\n", siteConfig.PHPVersion)
 	fmt.Printf("New PHP Version: %s\n", newPHPVersion)
 	fmt.Println()
+	
+	// Quick site accessibility check
+	utils.Section("Verifying Site Access")
+	utils.Log("Testing site accessibility...")
+	
+	// Check if site responds
+	curlCmd := fmt.Sprintf("curl -s -o /dev/null -w '%%{http_code}' -m 5 http://localhost -H 'Host: %s'", domain)
+	httpCode, err := utils.RunShell(curlCmd)
+	if err != nil {
+		utils.Warn("Could not test site: %v", err)
+	} else {
+		httpCode = strings.TrimSpace(httpCode)
+		if httpCode == "200" {
+			utils.Ok("Site is accessible (HTTP %s)", httpCode)
+		} else if httpCode == "500" || httpCode == "502" || httpCode == "503" {
+			utils.Warn("Site returned HTTP %s - there may be an issue", httpCode)
+			fmt.Println()
+			fmt.Println("Troubleshooting steps:")
+			fmt.Printf("  1. Check PHP-FPM logs: tail -f /var/log/php%s-fpm-%s-error.log\n", newPHPVersion, domain)
+			fmt.Printf("  2. Check Nginx logs: tail -f /var/log/nginx/%s-error.log\n", domain)
+			fmt.Printf("  3. Verify socket: ls -la %s\n", socketPath)
+			fmt.Printf("  4. Test PHP-FPM: sudo -u www-data php%s -v\n", newPHPVersion)
+			fmt.Printf("  5. Clear Drupal cache: drush-%s cr\n", domain)
+			fmt.Println()
+		} else {
+			utils.Verify("Site returned HTTP %s", httpCode)
+		}
+	}
+	
+	fmt.Println()
 	fmt.Printf("Visit: http://%s or https://%s to verify\n", domain, domain)
 	fmt.Println()
 
+	return nil
+}
+
+// fixDatabaseHost checks and fixes database host configuration in settings files
+func fixDatabaseHost(domain, webroot string) error {
+	settingsDir := fmt.Sprintf("%s/web/sites/default", webroot)
+	settingsFiles := []string{
+		fmt.Sprintf("%s/settings.svp.php", settingsDir),
+		fmt.Sprintf("%s/settings.php", settingsDir),
+	}
+
+	for _, settingsFile := range settingsFiles {
+		if !utils.CheckFileExists(settingsFile) {
+			continue
+		}
+
+		// Check if file contains database host = 'db'
+		checkCmd := fmt.Sprintf("grep -E \"'host'.*=>.*'db'\" %s", settingsFile)
+		_, err := utils.RunShell(checkCmd)
+		if err != nil {
+			// Not found or error - continue to next file
+			continue
+		}
+
+		// Found 'db' as hostname - needs fixing
+		utils.Warn("Found database host 'db' in %s", settingsFile)
+		fmt.Println("This needs to be changed to 'localhost' for non-Docker environments.")
+		fmt.Print("Automatically fix this? [Y/n]: ")
+		
+		var response string
+		fmt.Scanln(&response)
+		if response == "n" || response == "N" {
+			utils.Skip("Skipping database host fix")
+			return nil
+		}
+
+		utils.Log("Fixing database host in %s...", settingsFile)
+
+		// Make writable
+		_, _ = utils.RunCommand("chmod", "u+w", settingsDir)
+		_, _ = utils.RunCommand("chmod", "u+w", settingsFile)
+
+		// Fix the host
+		fixCmd := fmt.Sprintf("sed -i \"s/'host' => 'db'/'host' => 'localhost'/g\" %s", settingsFile)
+		_, err = utils.RunShell(fixCmd)
+		if err != nil {
+			utils.Err("Failed to fix database host: %v", err)
+			return err
+		}
+
+		// Make read-only again
+		_, _ = utils.RunCommand("chmod", "444", settingsFile)
+		_, _ = utils.RunCommand("chmod", "555", settingsDir)
+
+		utils.Ok("Database host fixed in %s", settingsFile)
+
+		// Clear Drupal cache if drush is available
+		drushCmd := fmt.Sprintf("drush-%s", domain)
+		if utils.CommandExists(drushCmd) {
+			utils.Log("Clearing Drupal cache...")
+			_, _ = utils.RunCommand(drushCmd, "cr")
+			utils.Ok("Cache cleared")
+		}
+
+		return nil
+	}
+
+	utils.Verify("Database host configuration looks correct")
 	return nil
 }

@@ -473,7 +473,42 @@ func FullSetup(cfg *types.Config) error {
 				fmt.Printf("  • Or use Drush: drush-%s site:install\n", result.Domain)
 			} else {
 				// Successful install or import - provide access links
-				fmt.Printf("  • Login to admin: drush-%s uli\n", result.Domain)
+				// Get the Drush login link
+				drushDir := filepath.Join(cfg.Webroot, result.Domain)
+				if cfg.DrupalRoot != "" {
+					drushDir = filepath.Join(drushDir, cfg.DrupalRoot)
+				} else {
+					// Auto-detect composer.json location
+					for _, subdir := range []string{"drupal", "app", "backend"} {
+						potentialPath := filepath.Join(filepath.Join(cfg.Webroot, result.Domain), subdir)
+						if utils.CheckFileExists(filepath.Join(potentialPath, "composer.json")) {
+							drushDir = potentialPath
+							break
+						}
+					}
+				}
+				
+				// Get admin user
+				adminUser := "admin"
+				output, err := utils.RunShell("getent group www-data | cut -d: -f4")
+				if err == nil {
+					members := strings.Split(strings.TrimSpace(output), ",")
+					for _, member := range members {
+						if member != "" && member != "www-data" {
+							adminUser = member
+							break
+						}
+					}
+				}
+				
+				// Generate and display one-time login link
+				loginLink, err := cms.GetDrupalLoginLink(drushDir, adminUser)
+				if err == nil && loginLink != "" {
+					fmt.Printf("  • Login to admin: %s\n", loginLink)
+				} else {
+					fmt.Printf("  • Login to admin: drush-%s uli\n", result.Domain)
+				}
+				
 				fmt.Printf("  • Visit homepage: %s://%s\n", protocol, result.Domain)
 				fmt.Printf("  • Check status: %s://%s/admin/reports/status\n", protocol, result.Domain)
 				
