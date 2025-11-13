@@ -28,9 +28,17 @@ func PHPPackages(version string) []string {
 
 // InstallPHP installs a specific PHP version with required extensions
 func InstallPHP(version string, verifyOnly bool) error {
-	// Ensure Sury repo is added
+	// Ensure Sury repo is added or native packages are available
 	if err := system.AddPHPRepoIfNeeded(verifyOnly); err != nil {
 		return err
+	}
+
+	// Update package cache to ensure we have the latest package information
+	if !verifyOnly {
+		utils.Log("Updating package cache...")
+		if _, err := utils.RunCommand("apt-get", "update", "-y"); err != nil {
+			utils.Warn("Failed to update package cache: %v", err)
+		}
 	}
 
 	packages := PHPPackages(version)
@@ -48,9 +56,31 @@ func InstallPHP(version string, verifyOnly bool) error {
 			return fmt.Errorf("missing PHP packages")
 		}
 
+		// Check if the first package is available before attempting full install
+		firstPkg := missing[0]
+		checkCmd := fmt.Sprintf("apt-cache policy %s | grep -q 'Candidate:' && apt-cache policy %s | grep -v 'Candidate: (none)'", firstPkg, firstPkg)
+		_, err := utils.RunShell(checkCmd)
+		if err != nil {
+			// Package not available - provide helpful error
+			utils.Err("PHP %s packages are not available in your distribution's repositories", version)
+			
+			// Detect OS to provide specific guidance
+			codename, _ := utils.RunShell("lsb_release -sc")
+			codename = strings.TrimSpace(codename)
+			
+			if codename == "trixie" || codename == "sid" {
+				utils.Err("Debian %s ships with PHP 8.4+ by default", codename)
+				utils.Err("Please use PHP 8.4 instead: svp -php-version 8.4")
+				return fmt.Errorf("PHP %s not available on Debian %s (use PHP 8.4+)", version, codename)
+			}
+			
+			utils.Err("Try running: apt-cache search php%s to see available versions", version)
+			return fmt.Errorf("PHP %s packages not found in repositories", version)
+		}
+
 		utils.Log("Installing PHP %s packages: %s", version, strings.Join(missing, ", "))
 		args := append([]string{"install", "-y", "--no-install-recommends"}, missing...)
-		_, err := utils.RunCommand("apt-get", args...)
+		_, err = utils.RunCommand("apt-get", args...)
 		if err != nil {
 			return fmt.Errorf("failed to install PHP packages: %v", err)
 		}

@@ -143,7 +143,7 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 	}
 
 	// Update package lists
-	_, err = utils.RunCommand("apt-get", "update", "-y")
+	_, err = utils.RunCommand("apt-get", "update")
 	if err != nil {
 		return fmt.Errorf("failed to update package lists: %v", err)
 	}
@@ -172,7 +172,7 @@ func EnsureBasePackages(verifyOnly bool) error {
 		utils.Log("Installing missing packages: %s", strings.Join(missing, ", "))
 
 		// Update package lists
-		if _, err := utils.RunCommand("apt-get", "update", "-y"); err != nil {
+		if _, err := utils.RunCommand("apt-get", "update"); err != nil {
 			return fmt.Errorf("failed to update package lists: %v", err)
 		}
 
