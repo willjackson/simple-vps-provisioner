@@ -30,6 +30,7 @@ func FullSetup(cfg *types.Config) error {
 		DBImported      bool
 		ConfigImported  bool
 		InstallFailed   bool
+		SettingsSVPAdded bool
 	}
 	var setupResults []DomainSetupResult
 
@@ -149,13 +150,18 @@ func FullSetup(cfg *types.Config) error {
 	utils.Section(fmt.Sprintf("%s Installations", strings.Title(cfg.CMS)))
 	fmt.Printf("Installing %s for domains: %s\n", cfg.CMS, strings.Join(domains, ", "))
 
+	// Track which domains had settings.svp.php added
+	settingsSVPByDomain := make(map[string]bool)
+
 	for _, domain := range domains {
 		if cfg.CMS == "drupal" {
-			err := cms.InstallDrupal(domain, cfg.Webroot, cfg.GitRepo, cfg.GitBranch,
+			settingsSVPAdded, err := cms.InstallDrupal(domain, cfg.Webroot, cfg.GitRepo, cfg.GitBranch,
 				cfg.DrupalRoot, cfg.Docroot, config.SitesDir, dbImportPath)
 			if err != nil {
 				return fmt.Errorf("failed to install Drupal for %s: %v", domain, err)
 			}
+			// Store whether settings.svp.php was added for this domain
+			settingsSVPByDomain[domain] = settingsSVPAdded
 		} else if cfg.CMS == "wordpress" {
 			err := cms.InstallWordPress(domain, cfg.Webroot, cfg.GitRepo, cfg.GitBranch, config.SitesDir)
 			if err != nil {
@@ -184,6 +190,7 @@ func FullSetup(cfg *types.Config) error {
 			DBImported:    dbImportPath != "",
 			ConfigImported: false,
 			InstallFailed: false,
+			SettingsSVPAdded: settingsSVPByDomain[domain],
 		}
 
 		// Determine webroot for this domain
@@ -437,6 +444,10 @@ func FullSetup(cfg *types.Config) error {
 		
 		if result.ConfigImported {
 			fmt.Println("Configuration: Imported from config/sync")
+		}
+		
+		if result.SettingsSVPAdded {
+			fmt.Println("Database Config: settings.svp.php created and added to .gitignore")
 		}
 		
 		if result.SSLConfigured {

@@ -9,7 +9,8 @@ import (
 )
 
 // InstallDrupal installs a Drupal site for a domain
-func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot string, sitesDir string, dbImport string) error {
+// Returns settingsSVPAdded flag indicating if settings.svp.php was created
+func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot string, sitesDir string, dbImport string) (settingsSVPAdded bool, err error) {
 	utils.Section("Installing Drupal for " + domain)
 
 	// Get admin username from www-data group
@@ -36,18 +37,18 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 			var response string
 			fmt.Scanln(&response)
 			if strings.ToLower(response) != "y" {
-				return fmt.Errorf("aborted: directory not empty")
+				return false, fmt.Errorf("aborted: directory not empty")
 			}
 			utils.Log("Removing existing directory...")
 			if _, err := utils.RunCommand("rm", "-rf", domainDir); err != nil {
-				return fmt.Errorf("failed to remove directory: %v", err)
+				return false, fmt.Errorf("failed to remove directory: %v", err)
 			}
 		}
 	}
 
 	// Ensure webroot exists
 	if err := utils.EnsureDir(domainDir); err != nil {
-		return fmt.Errorf("failed to create domain directory: %v", err)
+		return false, fmt.Errorf("failed to create domain directory: %v", err)
 	}
 
 	// Set ownership to admin:www-data
@@ -65,7 +66,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		if !utils.CheckDirExists(filepath.Join(domainDir, ".git")) {
 			_, err := utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s git clone -b %s %s %s", webroot, adminUser, gitBranch, gitRepo, domainDir))
 			if err != nil {
-				return fmt.Errorf("failed to clone repository: %v", err)
+				return false, fmt.Errorf("failed to clone repository: %v", err)
 			}
 			utils.Ok("Repository cloned successfully")
 		} else {
@@ -86,7 +87,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 			// Create Drupal project as admin user
 			_, err := utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s composer create-project drupal/recommended-project . --no-interaction", projectDir, adminUser))
 			if err != nil {
-				return fmt.Errorf("failed to create Drupal project: %v", err)
+				return false, fmt.Errorf("failed to create Drupal project: %v", err)
 			}
 
 			utils.Ok("Drupal project created")
@@ -150,7 +151,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		var err error
 		dbName, dbUser, dbPass, err = database.CreateDatabase(domain, sitesDir)
 		if err != nil {
-			return fmt.Errorf("failed to create database: %v", err)
+			return false, fmt.Errorf("failed to create database: %v", err)
 		}
 	}
 
@@ -197,7 +198,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 	// Import database if provided (database already cleared above)
 	if dbImport != "" {
 		if !utils.CheckFileExists(dbImport) {
-			return fmt.Errorf("database file not found: %s", dbImport)
+			return false, fmt.Errorf("database file not found: %s", dbImport)
 		}
 		
 		utils.Log("Importing database from %s...", dbImport)
@@ -214,7 +215,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		
 		_, err := utils.RunShell(importCmd)
 		if err != nil {
-			return fmt.Errorf("database import failed: %v", err)
+			return false, fmt.Errorf("database import failed: %v", err)
 		}
 		
 		utils.Ok("Database imported successfully")
@@ -227,65 +228,57 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 	}
 	sitesDefaultDir = filepath.Join(sitesDefaultDir, "web", "sites", "default")
 
-	// Create settings.php if it doesn't exist
+	// Handle settings.php creation or update
 	settingsFile := filepath.Join(sitesDefaultDir, "settings.php")
-	if !utils.CheckFileExists(settingsFile) {
-		utils.Log("Creating settings.php...")
+	settingsSVPFile := filepath.Join(sitesDefaultDir, "settings.svp.php")
+	settingsSVPAdded = false
+	
+	// Check if directory exists
+	if !utils.CheckDirExists(sitesDefaultDir) {
+		return false, fmt.Errorf("sites/default directory not found: %s", sitesDefaultDir)
+	}
 
-		// Check if directory exists
-		if !utils.CheckDirExists(sitesDefaultDir) {
-			return fmt.Errorf("sites/default directory not found: %s", sitesDefaultDir)
-		}
+	// Calculate config directory path relative to settings.php
+	configDir := filepath.Join(composerDir, "config", "sync")
+	if err := utils.EnsureDir(configDir); err != nil {
+		utils.Warn("Failed to create config directory: %v", err)
+	} else {
+		_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), configDir)
+		utils.Ok("Config directory created: %s", configDir)
+	}
+	configSyncPath := "../config/sync"
 
-		// Copy default settings if exists
-		defaultSettings := filepath.Join(sitesDefaultDir, "default.settings.php")
-		if utils.CheckFileExists(defaultSettings) {
-			_, _ = utils.RunCommand("cp", defaultSettings, settingsFile)
-		} else {
-			_, _ = utils.RunShell(fmt.Sprintf("touch %s", settingsFile))
-		}
-
-		// Make writable
-		_, _ = utils.RunCommand("chmod", "u+w", sitesDefaultDir)
-		_, _ = utils.RunCommand("chmod", "u+w", settingsFile)
-
-		// Calculate config directory path relative to settings.php
-		// settings.php is at: composerDir/web/sites/default/settings.php
-		// config should be at: composerDir/config/sync
-		// So from settings.php: ../../../config/sync
-		configDir := filepath.Join(composerDir, "config", "sync")
-		if err := utils.EnsureDir(configDir); err != nil {
-			utils.Warn("Failed to create config directory: %v", err)
-		} else {
-			_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), configDir)
-			utils.Ok("Config directory created: %s", configDir)
-		}
-		configSyncPath := "../config/sync"
-
-		// Create drush directory and drush.yml
-		drushDir := filepath.Join(composerDir, "drush")
-		if err := utils.EnsureDir(drushDir); err != nil {
-			utils.Warn("Failed to create drush directory: %v", err)
-		} else {
-			drushYmlPath := filepath.Join(drushDir, "drush.yml")
-			if !utils.CheckFileExists(drushYmlPath) {
-				drushYml := fmt.Sprintf("options:\n  uri: 'http://%s'\n", domain)
-				_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", drushYmlPath, drushYml))
-				if err != nil {
-					utils.Warn("Failed to create drush.yml: %v", err)
-				} else {
-					_, _ = utils.RunCommand("chown", fmt.Sprintf("%s:www-data", adminUser), drushYmlPath)
-					utils.Ok("Created drush/drush.yml with base URL")
-				}
+	// Create drush directory and drush.yml
+	drushDir := filepath.Join(composerDir, "drush")
+	if err := utils.EnsureDir(drushDir); err != nil {
+		utils.Warn("Failed to create drush directory: %v", err)
+	} else {
+		drushYmlPath := filepath.Join(drushDir, "drush.yml")
+		if !utils.CheckFileExists(drushYmlPath) {
+			drushYml := fmt.Sprintf("options:\n  uri: 'http://%s'\n", domain)
+			_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", drushYmlPath, drushYml))
+			if err != nil {
+				utils.Warn("Failed to create drush.yml: %v", err)
 			} else {
-				utils.Verify("drush/drush.yml already exists")
+				_, _ = utils.RunCommand("chown", fmt.Sprintf("%s:www-data", adminUser), drushYmlPath)
+				utils.Ok("Created drush/drush.yml with base URL")
 			}
+		} else {
+			utils.Verify("drush/drush.yml already exists")
 		}
+	}
 
-		// Append database configuration
-		dbConfig := fmt.Sprintf(`
+	// Prepare database configuration
+	dbConfig := fmt.Sprintf(`<?php
+/**
+ * SVP-managed database and configuration settings
+ * Generated by Simple VPS Provisioner
+ * 
+ * This file contains production database credentials and is automatically
+ * added to .gitignore to prevent committing sensitive information.
+ */
 
-// Database configuration added by setup script
+// Database configuration
 $databases['default']['default'] = [
   'database' => '%s',
   'username' => '%s',
@@ -312,9 +305,26 @@ $settings['config_sync_directory'] = '%s';
 $settings['hash_salt'] = '%s';
 `, dbName, dbUser, dbPass, strings.ReplaceAll(domain, ".", "\\."), configSyncPath, generateHashSalt())
 
-		_, err = utils.RunShell(fmt.Sprintf("cat >> %s <<'EOF'\n%s\nEOF", settingsFile, dbConfig))
+	if !utils.CheckFileExists(settingsFile) {
+		// No existing settings.php - create a new one normally
+		utils.Log("Creating settings.php...")
+
+		// Copy default settings if exists
+		defaultSettings := filepath.Join(sitesDefaultDir, "default.settings.php")
+		if utils.CheckFileExists(defaultSettings) {
+			_, _ = utils.RunCommand("cp", defaultSettings, settingsFile)
+		} else {
+			_, _ = utils.RunShell(fmt.Sprintf("touch %s", settingsFile))
+		}
+
+		// Make writable
+		_, _ = utils.RunCommand("chmod", "u+w", sitesDefaultDir)
+		_, _ = utils.RunCommand("chmod", "u+w", settingsFile)
+
+		// Append configuration directly to settings.php
+		_, err = utils.RunShell(fmt.Sprintf("cat >> %s <<'EOF'\n\n%s\nEOF", settingsFile, dbConfig))
 		if err != nil {
-			return fmt.Errorf("failed to write settings.php: %v", err)
+			return false, fmt.Errorf("failed to write settings.php: %v", err)
 		}
 
 		// Set proper permissions
@@ -322,43 +332,91 @@ $settings['hash_salt'] = '%s';
 		_, _ = utils.RunCommand("chmod", "555", sitesDefaultDir)
 
 		utils.Ok("settings.php created")
-
-		// Create public files directory
-		filesDir := filepath.Join(sitesDefaultDir, "files")
-		if err := utils.EnsureDir(filesDir); err != nil {
-			return fmt.Errorf("failed to create files directory: %v", err)
-		}
-		_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), filesDir)
-		_, _ = utils.RunCommand("chmod", "775", filesDir)
-		utils.Ok("Public files directory created")
 	} else {
-		utils.Verify("settings.php already exists")
+		// Existing settings.php found - use settings.svp.php pattern
+		utils.Log("settings.php already exists - creating settings.svp.php")
 		
-		// Update config_sync_directory if needed
+		// Make directories writable
+		_, _ = utils.RunCommand("chmod", "u+w", sitesDefaultDir)
 		_, _ = utils.RunCommand("chmod", "u+w", settingsFile)
-		content, err := utils.RunShell(fmt.Sprintf("cat %s", settingsFile))
-		if err == nil {
-			// Check if config_sync_directory is set correctly
-			if !strings.Contains(content, "$settings['config_sync_directory']") || !strings.Contains(content, "../config/sync") {
-				utils.Log("Updating config_sync_directory in settings.php...")
-				
-				// Remove old config_sync_directory lines
-				_, _ = utils.RunShell(fmt.Sprintf("sed -i '/config_sync_directory/d' %s", settingsFile))
-				
-				// Append correct config path
-				configUpdate := "\n// Config sync directory\n$settings['config_sync_directory'] = '../config/sync';\n"
-				_, _ = utils.RunShell(fmt.Sprintf("cat >> %s <<'EOF'\n%s\nEOF", settingsFile, configUpdate))
-				utils.Ok("Config sync directory updated")
-			}
+		
+		// Create settings.svp.php with our configuration
+		_, err = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", settingsSVPFile, dbConfig))
+		if err != nil {
+			return false, fmt.Errorf("failed to create settings.svp.php: %v", err)
 		}
+		utils.Ok("Created settings.svp.php")
+		
+		// Check if include statement already exists in settings.php
+		content, err := utils.RunShell(fmt.Sprintf("cat %s", settingsFile))
+		if err == nil && !strings.Contains(content, "settings.svp.php") {
+			// Append include statement to settings.php
+			includeStatement := `
+
+/**
+ * Include SVP-managed settings
+ * 
+ * This file is managed by Simple VPS Provisioner and contains database
+ * credentials. It is automatically added to .gitignore.
+ */
+if (file_exists($app_root . '/' . $site_path . '/settings.svp.php')) {
+  include $app_root . '/' . $site_path . '/settings.svp.php';
+}
+`
+			_, err = utils.RunShell(fmt.Sprintf("cat >> %s <<'EOF'\n%s\nEOF", settingsFile, includeStatement))
+			if err != nil {
+				return false, fmt.Errorf("failed to add include to settings.php: %v", err)
+			}
+			utils.Ok("Added settings.svp.php include to settings.php")
+		} else if err == nil {
+			utils.Verify("settings.svp.php already included in settings.php")
+		}
+		
+		// Set proper permissions
 		_, _ = utils.RunCommand("chmod", "444", settingsFile)
+		_, _ = utils.RunCommand("chmod", "444", settingsSVPFile)
+		_, _ = utils.RunCommand("chmod", "555", sitesDefaultDir)
+		
+		// Add settings.svp.php to .gitignore
+		gitignorePath := filepath.Join(composerDir, ".gitignore")
+		if utils.CheckFileExists(gitignorePath) {
+			// Check if already in .gitignore
+			gitignoreContent, err := utils.RunShell(fmt.Sprintf("cat %s", gitignorePath))
+			if err == nil && !strings.Contains(gitignoreContent, "settings.svp.php") {
+				utils.Log("Adding settings.svp.php to .gitignore...")
+				_, _ = utils.RunShell(fmt.Sprintf("echo '\n# SVP-managed database credentials\nweb/sites/*/settings.svp.php' >> %s", gitignorePath))
+				utils.Ok("Added settings.svp.php to .gitignore")
+			} else if err == nil {
+				utils.Verify("settings.svp.php already in .gitignore")
+			}
+		} else {
+			// Create .gitignore if it doesn't exist
+			utils.Log("Creating .gitignore with settings.svp.php...")
+			gitignoreContent := `# SVP-managed database credentials
+web/sites/*/settings.svp.php
+`
+			_, _ = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", gitignorePath, gitignoreContent))
+			_, _ = utils.RunCommand("chown", fmt.Sprintf("%s:www-data", adminUser), gitignorePath)
+			utils.Ok("Created .gitignore with settings.svp.php")
+		}
+		
+		settingsSVPAdded = true
 	}
+
+	// Create public files directory
+	filesDir := filepath.Join(sitesDefaultDir, "files")
+	if err := utils.EnsureDir(filesDir); err != nil {
+		return settingsSVPAdded, fmt.Errorf("failed to create files directory: %v", err)
+	}
+	_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), filesDir)
+	_, _ = utils.RunCommand("chmod", "775", filesDir)
+	utils.Ok("Public files directory created")
 
 	// Set proper ownership
 	_, _ = utils.RunCommand("chown", "-R", fmt.Sprintf("%s:www-data", adminUser), domainDir)
 
 	utils.Ok("Drupal installation complete for %s", domain)
-	return nil
+	return settingsSVPAdded, nil
 }
 
 // CreateDrushAlias creates a Drush site alias
