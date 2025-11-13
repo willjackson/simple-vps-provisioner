@@ -82,6 +82,9 @@ func Update(currentVersion string) error {
 		return fmt.Errorf("unsupported platform: %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
 
+	// Also try the version-specific name format
+	binaryNameWithVersion := getBinaryNameWithVersion(latestVersion)
+
 	utils.Log("Downloading svp v%s for %s/%s...", latestVersion, runtime.GOOS, runtime.GOARCH)
 
 	// Fetch release info
@@ -97,21 +100,25 @@ func Update(currentVersion string) error {
 	}
 
 	// Find binary and checksum URLs
+	// Try both naming formats: svp-linux-amd64 and svp_1.0.26_linux_amd64
 	var binaryURL, checksumURL string
+	var actualBinaryName string
 	for _, asset := range release.Assets {
-		if asset.Name == binaryName {
+		if asset.Name == binaryName || asset.Name == binaryNameWithVersion {
 			binaryURL = asset.BrowserDownloadURL
+			actualBinaryName = asset.Name
 		} else if asset.Name == "checksums.txt" {
 			checksumURL = asset.BrowserDownloadURL
 		}
 	}
 
 	if binaryURL == "" {
-		return fmt.Errorf("binary not found in release: %s", binaryName)
+		return fmt.Errorf("binary not found in release (tried: %s, %s)", binaryName, binaryNameWithVersion)
 	}
 
 	// Download binary to temp location
-	tmpBinary := fmt.Sprintf("/tmp/svp-update-%s", binaryName)
+	// Use the actual binary name from the release for checksum verification
+	tmpBinary := fmt.Sprintf("/tmp/%s", actualBinaryName)
 	_, err = utils.RunShell(fmt.Sprintf("curl -L -o %s %s", tmpBinary, binaryURL))
 	if err != nil {
 		return fmt.Errorf("failed to download binary: %v", err)
@@ -127,8 +134,8 @@ func Update(currentVersion string) error {
 			utils.Warn("Failed to download checksums, skipping verification")
 		} else {
 			defer os.Remove(tmpChecksum)
-			// Verify checksum
-			cmd := fmt.Sprintf("cd /tmp && sha256sum --check --ignore-missing %s 2>&1 | grep %s", tmpChecksum, binaryName)
+			// Verify checksum using the actual binary name found in the release
+			cmd := fmt.Sprintf("cd /tmp && sha256sum --check --ignore-missing %s 2>&1 | grep %s", tmpChecksum, actualBinaryName)
 			_, err = utils.RunShell(cmd)
 			if err != nil {
 				return fmt.Errorf("checksum verification failed")
@@ -194,4 +201,11 @@ func getBinaryName() string {
 	default:
 		return ""
 	}
+}
+
+// getBinaryNameWithVersion returns the binary name with version for current platform
+// Used for releases that include version in the filename (e.g., svp_1.0.26_linux_amd64)
+func getBinaryNameWithVersion(version string) string {
+	platform := fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf("svp_%s_%s", version, platform)
 }
