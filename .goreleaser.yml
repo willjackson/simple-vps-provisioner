@@ -15,9 +15,13 @@ builds:
       - arm64
     ldflags:
       - -s -w -X main.version={{.Version}}
+    # Set the binary name pattern to match what the updater expects
+    binary: svp-{{ .Os }}-{{ .Arch }}
 
 archives:
   - format: binary
+    # Don't add extra naming to the binary
+    name_template: "{{ .Binary }}"
 
 checksum:
   name_template: 'checksums.txt'
