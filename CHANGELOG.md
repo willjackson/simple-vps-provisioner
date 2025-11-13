@@ -21,12 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Swap management (auto/yes/no)
 - System verification mode
 - Comprehensive CLI with flag-based configuration
+- **DNS verification before SSL certificate issuance** - Automatically checks if domain DNS points to server before attempting Let's Encrypt certificate
+- Interactive DNS check with options to retry, continue without HTTPS, or abort
+- Multiple fallback methods for IP and DNS resolution (dig, nslookup, host)
 
 ### Features
 - **CMS Support**: Drupal and WordPress
 - **Web Stack**: Nginx + PHP-FPM 8.3 (configurable)
 - **Database**: MariaDB with automatic database creation
-- **Security**: Firewall, PHP hardening, secure credentials
+- **Security**: Firewall, PHP hardening, secure credentials, DNS verification for SSL
+- **SSL/HTTPS**: Let's Encrypt certificates with automatic DNS verification
 - **Isolation**: Per-domain PHP-FPM pools for better security and resource management
 - **Flexibility**: Support for Git deployments and custom configurations
 

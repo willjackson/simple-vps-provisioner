@@ -10,7 +10,8 @@ A Go-based command-line tool for provisioning Debian 13 (Trixie) VPS with LAMP s
 - **Multi-domain support** - Provision multiple domains in one run
 - **Per-domain PHP-FPM pools** - Isolated PHP processes for each site
 - **Git deployment** - Deploy from existing repositories
-- **SSL/HTTPS support** - Automatic Let's Encrypt certificates with certbot
+- **SSL/HTTPS support** - Automatic Let's Encrypt certificates with DNS verification
+- **DNS verification** - Automatic check before SSL certificate issuance
 - **Idempotent** - Safe to run multiple times
 - **Security hardening** - Firewall, PHP settings, database security, HSTS, OCSP stapling
 
@@ -249,12 +250,18 @@ sudo svp -mode setup -cms drupal \
 ```
 
 This will:
+- **Verify DNS points to server** (interactive check)
 - Install and configure certbot
 - Obtain Let's Encrypt SSL certificate
 - Configure nginx with HTTPS (port 443)
 - Redirect HTTP to HTTPS automatically
 - Enable HSTS, OCSP stapling, and TLS 1.2/1.3
 - Setup automatic certificate renewal
+
+**DNS Verification:** Before obtaining SSL certificates, the tool automatically verifies that your domain's DNS points to the server. If DNS is not configured or points elsewhere, you'll be prompted to:
+1. Check DNS again (after updating records)
+2. Continue without HTTPS (HTTP only)
+3. Abort setup
 
 After completion, visit `https://mysite.com` (note the **https**)
 
@@ -386,18 +393,38 @@ sudo certbot renew --dry-run
 sudo certbot renew --force-renewal
 ```
 
+#### DNS Verification
+
+Before obtaining SSL certificates, svp automatically verifies that your domain's DNS points to the server's public IP.
+
+**What it checks:**
+1. Gets the server's public IP address
+2. Resolves the domain's DNS records
+3. Compares the two IP addresses
+
+**If DNS doesn't match:**
+You'll be prompted with three options:
+- **Check DNS again** - Wait for DNS propagation (5-30 minutes) and recheck
+- **Continue without HTTPS** - Skip SSL and use HTTP only
+- **Abort setup** - Stop the installation
+
+**Manual DNS check:**
+```bash
+# Get your server's public IP
+wget -qO- https://ipinfo.io/ip
+
+# Check what IP the domain resolves to
+dig +short example.com
+
+# Both should match for SSL to work
+```
+
 #### Certificate not obtained
 **Common causes:**
 - Domain doesn't point to server IP yet (DNS propagation)
 - Firewall blocking port 80 or 443
 - No email provided (`-le-email` flag)
 - Rate limit reached (5 certificates per week for same domain)
-
-**Check DNS:**
-```bash
-dig +short example.com
-# Should return your server IP
-```
 
 **Check nginx configuration:**
 ```bash
@@ -416,17 +443,45 @@ sudo systemctl reload nginx
 sudo certbot delete --cert-name example.com
 ```
 
+## DNS Requirements for SSL
+
+When using Let's Encrypt SSL certificates (`-le-email` flag), your domain **must** point to the server before certificate issuance.
+
+**Setup Steps:**
+1. **Point your domain to the server** - Update your DNS A record:
+   ```
+   A    @           123.45.67.89  (server IP)
+   A    www         123.45.67.89  (if using www)
+   ```
+
+2. **Wait for DNS propagation** (typically 5-30 minutes)
+
+3. **Run svp** - The tool will verify DNS automatically:
+   ```bash
+   sudo svp -mode setup -cms drupal \
+     -domain example.com \
+     -le-email admin@example.com
+   ```
+
+4. **DNS Verification** - If DNS isn't configured:
+   - The tool displays your server IP
+   - Shows what IP the domain currently points to
+   - Prompts you to update DNS and check again
+
+**Note:** Let's Encrypt validates domain ownership via HTTP challenge. If DNS doesn't point to your server, certificate issuance will fail.
+
 ## Security Notes
 
-1. **Database credentials** are automatically generated and saved securely
-2. **Firewall** is enabled by default (SSH, HTTP, HTTPS)
-3. **SSL/HTTPS** - Free Let's Encrypt certificates with automatic renewal
-4. **HSTS** - HTTP Strict Transport Security enabled
-5. **TLS 1.2/1.3** - Modern encryption protocols only
-6. **OCSP Stapling** - Improved SSL performance and privacy
-7. **PHP settings** are hardened (disabled dangerous functions, etc.)
-8. **File permissions** are set appropriately (admin:www-data)
-9. **Per-site isolation** via separate PHP-FPM pools
+1. **DNS Verification** - Automatic check before SSL certificate issuance
+2. **Database credentials** are automatically generated and saved securely
+3. **Firewall** is enabled by default (SSH, HTTP, HTTPS)
+4. **SSL/HTTPS** - Free Let's Encrypt certificates with automatic renewal
+5. **HSTS** - HTTP Strict Transport Security enabled
+6. **TLS 1.2/1.3** - Modern encryption protocols only
+7. **OCSP Stapling** - Improved SSL performance and privacy
+8. **PHP settings** are hardened (disabled dangerous functions, etc.)
+9. **File permissions** are set appropriately (admin:www-data)
+10. **Per-site isolation** via separate PHP-FPM pools
 
 ## Adaptability to Other Distributions
 

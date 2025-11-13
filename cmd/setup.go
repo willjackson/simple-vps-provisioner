@@ -310,6 +310,15 @@ func FullSetup(cfg *types.Config) error {
 			} else {
 				// Obtain new certificate
 				if err := ssl.ObtainCertificate(domain, cfg.LEEmail); err != nil {
+					// Check if user chose to skip SSL or abort
+					if strings.Contains(err.Error(), "skipping SSL: DNS not configured") {
+						utils.Warn("Skipping SSL for %s - continuing with HTTP only", domain)
+						continue
+					}
+					if strings.Contains(err.Error(), "setup aborted by user") {
+						return fmt.Errorf("setup aborted: %v", err)
+					}
+					// Other errors
 					utils.Warn("Failed to obtain SSL for %s: %v", domain, err)
 					continue
 				}
