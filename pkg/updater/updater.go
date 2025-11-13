@@ -153,15 +153,15 @@ func Update(currentVersion string) error {
 				// Verify checksum
 				// Note: sha256sum -c expects files to be in the same directory as checksums.txt
 				cmd := fmt.Sprintf("cd /tmp && sha256sum -c %s 2>&1", tmpChecksum)
-				output, err := utils.RunShell(cmd)
+				verifyOutput, _ := utils.RunShell(cmd)
 				
 				if os.Getenv("DEBUG") == "1" {
 					utils.Log("Full sha256sum output:")
-					fmt.Println(output)
+					fmt.Println(verifyOutput)
 				}
 				
 				// Check if our specific binary passed
-				if strings.Contains(output, actualBinaryName+": OK") {
+				if strings.Contains(verifyOutput, actualBinaryName+": OK") {
 					utils.Ok("Checksum verified")
 				} else {
 					return fmt.Errorf("checksum verification failed for %s", actualBinaryName)
