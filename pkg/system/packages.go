@@ -72,8 +72,8 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 		return fmt.Errorf("failed to install dependencies: %v", err)
 	}
 
-	// Download and install GPG key
-	_, err = utils.RunShell("curl -fsSL https://packages.sury.org/php/apt.gpg | gpg --dearmor -o /usr/share/keyrings/sury-keyring.gpg")
+	// Download and install GPG key (with --yes to overwrite without prompting)
+	_, err = utils.RunShell("curl -fsSL https://packages.sury.org/php/apt.gpg | gpg --dearmor --yes -o /usr/share/keyrings/sury-keyring.gpg")
 	if err != nil {
 		return fmt.Errorf("failed to download GPG key: %v", err)
 	}
