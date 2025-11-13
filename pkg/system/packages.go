@@ -91,6 +91,25 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 	}
 	codename = strings.TrimSpace(codename)
 
+	// Verify OS detection - cross-check with /etc/os-release if available
+	// This helps catch misconfigurations where lsb_release reports wrong info
+	if osReleaseID, err := utils.RunShell("grep '^ID=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '\"'"); err == nil {
+		osReleaseID = strings.TrimSpace(strings.ToLower(osReleaseID))
+		lsbID := strings.ToLower(distroID)
+		
+		// If there's a mismatch and os-release shows debian/ubuntu, trust it
+		if osReleaseID != lsbID && (osReleaseID == "debian" || osReleaseID == "ubuntu") {
+			utils.Warn("OS mismatch detected: lsb_release reports '%s' but os-release shows '%s'", distroID, osReleaseID)
+			utils.Log("Using os-release ID: %s", osReleaseID)
+			// Correct the distro ID
+			if osReleaseID == "debian" {
+				distroID = "Debian"
+			} else if osReleaseID == "ubuntu" {
+				distroID = "Ubuntu"
+			}
+		}
+	}
+
 	utils.Log("Detected %s %s", distroID, codename)
 
 	// Sury repository may not support newer/testing Debian/Ubuntu versions yet
@@ -170,10 +189,12 @@ func getSupportedSuryCodename(distroID, codename string) string {
 		// Ubuntu codename mappings
 		supportedUbuntuCodenames := map[string]string{
 			// Supported LTS versions
-			"noble":    "noble",    // Ubuntu 24.04 LTS
-			"jammy":    "jammy",    // Ubuntu 22.04 LTS
+			"jammy":    "jammy",    // Ubuntu 22.04 LTS (most stable for Sury)
 			"focal":    "focal",    // Ubuntu 20.04 LTS
 			"bionic":   "bionic",   // Ubuntu 18.04 LTS
+			
+			// Noble (24.04) - may not be supported yet by Sury
+			"noble":    "jammy",    // Ubuntu 24.04 LTS -> fallback to 22.04 for now
 			
 			// Interim releases (supported for 9 months)
 			"mantic":   "jammy",    // Ubuntu 23.10 -> fallback to 22.04 LTS
@@ -181,16 +202,19 @@ func getSupportedSuryCodename(distroID, codename string) string {
 			"kinetic":  "jammy",    // Ubuntu 22.10 -> fallback to 22.04 LTS
 			
 			// Development/Future releases
-			"oracular": "noble",    // Ubuntu 24.10 (dev) -> use 24.04 LTS
-			"plucky":   "noble",    // Ubuntu 25.04 (future) -> use 24.04 LTS
+			"oracular": "jammy",    // Ubuntu 24.10 (dev) -> use 22.04 LTS
+			"plucky":   "jammy",    // Ubuntu 25.04 (future) -> use 22.04 LTS
+			
+			// Invalid/corrupted codenames
+			"questing": "jammy",    // Corrupted detection -> use 22.04 LTS
 		}
 		
 		if mapped, ok := supportedUbuntuCodenames[codename]; ok {
 			return mapped
 		}
 		
-		// Unknown Ubuntu version - default to noble (24.04 LTS)
-		return "noble"
+		// Unknown Ubuntu version - default to jammy (22.04 LTS) which is well-supported
+		return "jammy"
 	}
 	
 	// Debian codename mappings (default)

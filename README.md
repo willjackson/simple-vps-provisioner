@@ -459,8 +459,17 @@ The tool automatically:
 
 **Output example:**
 ```
+[CREATE] Adding Sury PHP repository...
 [CREATE] Detected Ubuntu jammy
-[!] Ubuntu mantic not yet supported by Sury, using jammy repository
+[✓] Sury PHP repository added
+[CREATE] Installing PHP 8.3 packages...
+[✓] PHP 8.3 packages installed
+```
+
+**On Ubuntu 24.04 (Noble):**
+```
+[CREATE] Detected Ubuntu noble
+[!] Ubuntu noble not yet supported by Sury, using jammy repository
 [✓] Sury PHP repository added
 ```
 
@@ -674,11 +683,13 @@ This tool works on both Debian and Ubuntu:
 - **Debian Testing/Unstable** - Automatically falls back to Debian 12 packages
 
 ### Ubuntu Support
-- **Ubuntu 24.04 LTS (Noble)** - Fully supported ✅
-- **Ubuntu 22.04 LTS (Jammy)** - Fully supported ✅
+- **Ubuntu 22.04 LTS (Jammy)** - Fully supported ✅ (Most stable)
 - **Ubuntu 20.04 LTS (Focal)** - Fully supported ✅
+- **Ubuntu 24.04 LTS (Noble)** - Supported ✅ (uses 22.04 packages)
 - **Ubuntu 18.04 LTS (Bionic)** - Supported ✅
-- **Ubuntu interim releases** - Automatically falls back to nearest LTS
+- **Ubuntu interim releases** - Automatically falls back to 22.04 LTS
+
+**Note:** Ubuntu 24.04 (Noble) is very new and Sury doesn't have dedicated packages yet, so it automatically uses Ubuntu 22.04 (Jammy) packages which are fully compatible.
 
 ### Automatic Version Detection
 
@@ -690,6 +701,7 @@ The tool automatically:
 
 For example:
 - Debian 13 (Trixie) → Uses Debian 12 (Bookworm) PHP packages
+- Ubuntu 24.04 (Noble) → Uses Ubuntu 22.04 LTS (Jammy) PHP packages
 - Ubuntu 23.10 (Mantic) → Uses Ubuntu 22.04 LTS (Jammy) PHP packages
 
 This ensures compatibility even on cutting-edge or unsupported releases.
