@@ -9,7 +9,6 @@ import (
 )
 
 // InstallDrupal installs a Drupal site for a domain
-// Returns settingsSVPAdded flag indicating if settings.svp.php was created
 func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot string, sitesDir string, dbImport string, keepExistingDB bool) (settingsSVPAdded bool, err error) {
 	utils.Section("Installing Drupal for " + domain)
 
@@ -118,7 +117,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 	// Handle database setup based on keepExistingDB flag
 	dbName, dbUser, dbPass := "", "", ""
 	existingDB := false
-	
+
 	if keepExistingDB {
 		// Check if database credentials already exist
 		if existingDBName, existingDBUser, existingDBPass, exists := database.ReadDatabaseCredentials(domain, sitesDir); exists {
@@ -127,7 +126,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 			dbPass = existingDBPass
 			existingDB = true
 			utils.Ok("Using existing database credentials")
-			
+
 			// If we have existing database and drush is available, drop all tables
 			if utils.CheckFileExists(filepath.Join(composerDir, "vendor/bin/drush")) {
 				utils.Log("Clearing existing database tables...")
@@ -159,7 +158,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		if err := database.DropDatabase(domain, sitesDir); err != nil {
 			utils.Warn("Failed to drop existing database: %v", err)
 		}
-		
+
 		// Create fresh database with new credentials
 		var err error
 		dbName, dbUser, dbPass, err = database.CreateDatabase(domain, sitesDir)
@@ -192,7 +191,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		} else {
 			utils.Verify("Drush already in composer.json")
 		}
-		
+
 		// If we have existing database but couldn't drop tables earlier (drush wasn't available),
 		// do it now after drush is installed
 		if existingDB && utils.CheckFileExists(filepath.Join(composerDir, "vendor/bin/drush")) {
@@ -213,9 +212,9 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		if !utils.CheckFileExists(dbImport) {
 			return false, fmt.Errorf("database file not found: %s", dbImport)
 		}
-		
+
 		utils.Log("Importing database from %s...", dbImport)
-		
+
 		// Import database (handle .gz files)
 		var importCmd string
 		if strings.HasSuffix(strings.ToLower(dbImport), ".gz") {
@@ -225,12 +224,12 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 			// Direct import for .sql files
 			importCmd = fmt.Sprintf("mysql -u%s -p%s %s < %s", dbUser, dbPass, dbName, dbImport)
 		}
-		
+
 		_, err := utils.RunShell(importCmd)
 		if err != nil {
 			return false, fmt.Errorf("database import failed: %v", err)
 		}
-		
+
 		utils.Ok("Database imported successfully")
 	}
 
@@ -245,7 +244,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 	settingsFile := filepath.Join(sitesDefaultDir, "settings.php")
 	settingsSVPFile := filepath.Join(sitesDefaultDir, "settings.svp.php")
 	settingsSVPAdded = false
-	
+
 	// Check if directory exists
 	if !utils.CheckDirExists(sitesDefaultDir) {
 		return false, fmt.Errorf("sites/default directory not found: %s", sitesDefaultDir)
@@ -348,18 +347,18 @@ $settings['hash_salt'] = '%s';
 	} else {
 		// Existing settings.php found - use settings.svp.php pattern
 		utils.Log("settings.php already exists - creating settings.svp.php")
-		
+
 		// Make directories writable
 		_, _ = utils.RunCommand("chmod", "u+w", sitesDefaultDir)
 		_, _ = utils.RunCommand("chmod", "u+w", settingsFile)
-		
+
 		// Create settings.svp.php with our configuration
 		_, err = utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", settingsSVPFile, dbConfig))
 		if err != nil {
 			return false, fmt.Errorf("failed to create settings.svp.php: %v", err)
 		}
 		utils.Ok("Created settings.svp.php")
-		
+
 		// Check if include statement already exists in settings.php
 		content, err := utils.RunShell(fmt.Sprintf("cat %s", settingsFile))
 		if err == nil && !strings.Contains(content, "settings.svp.php") {
@@ -384,12 +383,12 @@ if (file_exists($app_root . '/' . $site_path . '/settings.svp.php')) {
 		} else if err == nil {
 			utils.Verify("settings.svp.php already included in settings.php")
 		}
-		
+
 		// Set proper permissions
 		_, _ = utils.RunCommand("chmod", "444", settingsFile)
 		_, _ = utils.RunCommand("chmod", "444", settingsSVPFile)
 		_, _ = utils.RunCommand("chmod", "555", sitesDefaultDir)
-		
+
 		// Add settings.svp.php to .gitignore
 		gitignorePath := filepath.Join(composerDir, ".gitignore")
 		if utils.CheckFileExists(gitignorePath) {
@@ -412,7 +411,7 @@ web/sites/*/settings.svp.php
 			_, _ = utils.RunCommand("chown", fmt.Sprintf("%s:www-data", adminUser), gitignorePath)
 			utils.Ok("Created .gitignore with settings.svp.php")
 		}
-		
+
 		settingsSVPAdded = true
 	}
 
@@ -463,7 +462,7 @@ func CreateDrushAlias(domain, projectDir, adminUser string) error {
 	}
 
 	utils.Ok("Drush alias: @%s", aliasName)
-	
+
 	// Also create a shell wrapper for convenience
 	return CreateDrushWrapper(domain, projectDir)
 }
@@ -498,21 +497,21 @@ exec %s "$@"
 // DropDatabaseTables drops all tables from the database using drush sql-drop
 func DropDatabaseTables(projectDir, adminUser, domain string) error {
 	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
-	
+
 	if !utils.CheckFileExists(drushPath) {
 		utils.Warn("Drush not found at %s, cannot drop tables", drushPath)
 		return fmt.Errorf("drush not found")
 	}
-	
+
 	utils.Log("Dropping all tables from database for %s using drush...", domain)
-	
+
 	// Use drush sql-drop to drop all tables
 	cmd := fmt.Sprintf("cd %s && sudo -u %s %s sql-drop -y", projectDir, adminUser, drushPath)
 	_, err := utils.RunShell(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to drop database tables: %v", err)
 	}
-	
+
 	utils.Ok("All tables dropped from database")
 	return nil
 }
@@ -589,7 +588,7 @@ func ImportDrupalConfig(domain, projectDir, adminUser string, hasDBImport bool) 
 		utils.Skip("Cannot check config directory, skipping config import")
 		return nil
 	}
-	
+
 	ymlCount := strings.TrimSpace(output)
 	if ymlCount == "0" || ymlCount == "" {
 		utils.Skip("No YAML config files found in config/sync, skipping config import")
@@ -599,7 +598,7 @@ func ImportDrupalConfig(domain, projectDir, adminUser string, hasDBImport bool) 
 	// If we did site-install (not database import), get UUID from config and set it in DB
 	if !hasDBImport {
 		utils.Log("Getting UUID from config...")
-		
+
 		// Check if system.site.yml exists in config
 		systemSiteConfig := filepath.Join(configDir, "system.site.yml")
 		if utils.CheckFileExists(systemSiteConfig) {
@@ -608,7 +607,7 @@ func ImportDrupalConfig(domain, projectDir, adminUser string, hasDBImport bool) 
 			if err == nil && strings.TrimSpace(uuidOutput) != "" {
 				configUUID := strings.TrimSpace(uuidOutput)
 				utils.Log("Setting site UUID to match config: %s", configUUID)
-				
+
 				// Set the UUID in the database
 				cmd := fmt.Sprintf("cd %s && sudo -u %s %s config:set system.site uuid %s -y", projectDir, adminUser, drushPath, configUUID)
 				_, err = utils.RunShell(cmd)
@@ -637,17 +636,17 @@ func ImportDrupalConfig(domain, projectDir, adminUser string, hasDBImport bool) 
 // GetDrupalLoginLink generates and returns a one-time login link using drush uli
 func GetDrupalLoginLink(projectDir, adminUser string) (string, error) {
 	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
-	
+
 	if !utils.CheckFileExists(drushPath) {
 		return "", fmt.Errorf("drush not found")
 	}
-	
+
 	// Run drush uli to get login link
 	cmd := fmt.Sprintf("cd %s && sudo -u %s %s uli", projectDir, adminUser, drushPath)
 	output, err := utils.RunShell(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate login link: %v", err)
 	}
-	
+
 	return strings.TrimSpace(output), nil
 }

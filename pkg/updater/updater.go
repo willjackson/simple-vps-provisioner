@@ -100,7 +100,6 @@ func Update(currentVersion string) error {
 	}
 
 	// Find binary and checksum URLs
-	// Try both naming formats: svp-linux-amd64 and svp_1.0.26_linux_amd64
 	var binaryURL, checksumURL string
 	var actualBinaryName string
 	for _, asset := range release.Assets {
@@ -117,7 +116,6 @@ func Update(currentVersion string) error {
 	}
 
 	// Download binary to temp location
-	// Use the actual binary name from the release for checksum verification
 	tmpBinary := fmt.Sprintf("/tmp/%s", actualBinaryName)
 	_, err = utils.RunShell(fmt.Sprintf("curl -L -o %s %s", tmpBinary, binaryURL))
 	if err != nil {
@@ -134,7 +132,7 @@ func Update(currentVersion string) error {
 			utils.Warn("Failed to download checksums, skipping verification")
 		} else {
 			defer os.Remove(tmpChecksum)
-			
+
 			// Debug: Show what we're looking for
 			if os.Getenv("DEBUG") == "1" {
 				utils.Log("Looking for binary: %s", actualBinaryName)
@@ -144,7 +142,7 @@ func Update(currentVersion string) error {
 				fmt.Println(contents)
 				utils.Log("Attempting checksum verification...")
 			}
-			
+
 			// First, check if the binary name is in the checksums file
 			checkExists := fmt.Sprintf("grep -q '%s' %s", actualBinaryName, tmpChecksum)
 			if _, checkErr := utils.RunShell(checkExists); checkErr != nil {
@@ -154,12 +152,12 @@ func Update(currentVersion string) error {
 				// Note: sha256sum -c expects files to be in the same directory as checksums.txt
 				cmd := fmt.Sprintf("cd /tmp && sha256sum -c %s 2>&1", tmpChecksum)
 				verifyOutput, _ := utils.RunShell(cmd)
-				
+
 				if os.Getenv("DEBUG") == "1" {
 					utils.Log("Full sha256sum output:")
 					fmt.Println(verifyOutput)
 				}
-				
+
 				// Check if our specific binary passed
 				if strings.Contains(verifyOutput, actualBinaryName+": OK") {
 					utils.Ok("Checksum verified")
@@ -230,7 +228,6 @@ func getBinaryName() string {
 }
 
 // getBinaryNameWithVersion returns the binary name with version for current platform
-// Used for releases that include version in the filename (e.g., svp_1.0.26_linux_amd64)
 func getBinaryNameWithVersion(version string) string {
 	platform := fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH)
 	return fmt.Sprintf("svp_%s_%s", version, platform)
