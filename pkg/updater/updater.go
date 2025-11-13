@@ -82,9 +82,6 @@ func Update(currentVersion string) error {
 		return fmt.Errorf("unsupported platform: %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
 
-	// Also try the version-specific name format
-	binaryNameWithVersion := getBinaryNameWithVersion(latestVersion)
-
 	utils.Log("Downloading svp v%s for %s/%s...", latestVersion, runtime.GOOS, runtime.GOARCH)
 
 	// Fetch release info
@@ -103,7 +100,7 @@ func Update(currentVersion string) error {
 	var binaryURL, checksumURL string
 	var actualBinaryName string
 	for _, asset := range release.Assets {
-		if asset.Name == binaryName || asset.Name == binaryNameWithVersion {
+		if asset.Name == binaryName {
 			binaryURL = asset.BrowserDownloadURL
 			actualBinaryName = asset.Name
 		} else if asset.Name == "checksums.txt" {
@@ -112,7 +109,13 @@ func Update(currentVersion string) error {
 	}
 
 	if binaryURL == "" {
-		return fmt.Errorf("binary not found in release (tried: %s, %s)", binaryName, binaryNameWithVersion)
+		// List available assets for debugging
+		utils.Err("Binary not found in release: %s", binaryName)
+		utils.Log("Available assets:")
+		for _, asset := range release.Assets {
+			utils.Log("  - %s", asset.Name)
+		}
+		return fmt.Errorf("binary not found in release: %s", binaryName)
 	}
 
 	// Download binary to temp location
@@ -227,8 +230,4 @@ func getBinaryName() string {
 	}
 }
 
-// getBinaryNameWithVersion returns the binary name with version for current platform
-func getBinaryNameWithVersion(version string) string {
-	platform := fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH)
-	return fmt.Sprintf("svp_%s_%s", version, platform)
-}
+

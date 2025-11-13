@@ -96,18 +96,21 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
-# Remove 'v' prefix from version for binary name
+# Remove 'v' prefix from version
 VERSION_NUMBER="${VERSION#v}"
 
-# Goreleaser naming convention: svp_VERSION_OS_ARCH
-BINARY_FILE="${BINARY_NAME}_${VERSION_NUMBER}_${OS}_${ARCH}"
+# GoReleaser naming convention: svp-OS-ARCH (without version)
+BINARY_FILE="${BINARY_NAME}-${OS}-${ARCH}"
 
 # Extract download URL
-DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep "browser_download_url.*${BINARY_FILE}" | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep "browser_download_url.*${BINARY_FILE}\"" | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
 
 if [ -z "$DOWNLOAD_URL" ]; then
     echo "Error: Could not find binary in release"
     echo "Looking for: ${BINARY_FILE}"
+    echo "Available assets:"
+    echo "$RELEASE_JSON" | grep "browser_download_url" | sed -E 's/.*"browser_download_url": *"([^"]+)".*/  - \1/' | sed 's|.*/||'
+    echo ""
     echo "Please check:"
     echo "  1. Repository exists: https://github.com/${REPO_OWNER}/${REPO_NAME}"
     echo "  2. Binary ${BINARY_FILE} exists in latest release"
