@@ -213,7 +213,9 @@ func promptUserAction(domain string) error {
 	}
 }
 
-// ObtainCertificate obtains SSL certificate for a domain
+// ObtainCertificate obtains SSL certificate for a domain using a two-phase approach:
+// Phase 1: Obtain certificate without modifying nginx (safer, won't break site if it fails)
+// Phase 2: Configure nginx (done by caller after verifying certificate exists)
 func ObtainCertificate(domain, email string) error {
 	// Check if certificate already exists
 	certPath := fmt.Sprintf("/etc/letsencrypt/live/%s/fullchain.pem", domain)
@@ -234,14 +236,44 @@ func ObtainCertificate(domain, email string) error {
 
 	utils.Log("Obtaining SSL certificate for %s", domain)
 
-	// Use certbot with nginx plugin
-	cmd := fmt.Sprintf("certbot --nginx -d %s --non-interactive --agree-tos --email %s --redirect --no-eff-email", domain, email)
+	// PHASE 1: Obtain certificate ONLY - do not modify nginx
+	// This ensures that if certificate obtainment fails (e.g., rate limit),
+	// nginx configuration remains unchanged and the site continues to work over HTTP
+	cmd := fmt.Sprintf("certbot certonly --nginx -d %s --non-interactive --agree-tos --email %s --no-eff-email", domain, email)
 	_, err := utils.RunShell(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to obtain certificate: %v", err)
 	}
 
+	// Verify certificate was actually created
+	if !utils.CheckFileExists(certPath) {
+		return fmt.Errorf("certificate file not found after obtainment: %s", certPath)
+	}
+
 	utils.Ok("SSL certificate obtained for %s", domain)
+	return nil
+}
+
+// ConfigureNginxSSL configures nginx to use an existing SSL certificate
+// This is PHASE 2 of SSL setup - only call after ObtainCertificate succeeds
+func ConfigureNginxSSL(domain string) error {
+	// Verify certificate exists first
+	certPath := fmt.Sprintf("/etc/letsencrypt/live/%s/fullchain.pem", domain)
+	if !utils.CheckFileExists(certPath) {
+		return fmt.Errorf("certificate not found: %s", certPath)
+	}
+
+	utils.Log("Configuring nginx with SSL for %s...", domain)
+
+	// Use certbot install to configure nginx with existing certificate
+	// The --redirect flag adds HTTP to HTTPS redirect
+	cmd := fmt.Sprintf("certbot install --nginx -d %s --cert-name %s --non-interactive --redirect", domain, domain)
+	_, err := utils.RunShell(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to configure nginx SSL: %v", err)
+	}
+
+	utils.Ok("Nginx configured with SSL for %s", domain)
 	return nil
 }
 

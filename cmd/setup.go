@@ -347,7 +347,7 @@ func FullSetup(cfg *types.Config) error {
 				utils.Ok("SSL reconfigured for %s", domain)
 				setupResults[i].SSLConfigured = true
 			} else {
-				// Obtain new certificate
+				// PHASE 1: Obtain certificate (doesn't modify nginx)
 				if err := ssl.ObtainCertificate(domain, cfg.LEEmail); err != nil {
 					// Check if user chose to skip SSL or abort
 					if strings.Contains(err.Error(), "skipping SSL: DNS not configured") {
@@ -357,10 +357,21 @@ func FullSetup(cfg *types.Config) error {
 					if strings.Contains(err.Error(), "setup aborted by user") {
 						return fmt.Errorf("setup aborted: %v", err)
 					}
-					// Other errors
+					// Other errors (rate limits, network issues, etc.)
+					// IMPORTANT: nginx remains unchanged, site continues on HTTP
 					utils.Warn("Failed to obtain SSL for %s: %v", domain, err)
+					utils.Warn("Site will remain HTTP only - nginx not modified")
 					continue
 				}
+				
+				// PHASE 2: Configure nginx with the certificate
+				if err := ssl.ConfigureNginxSSL(domain); err != nil {
+					utils.Warn("Failed to configure nginx SSL for %s: %v", domain, err)
+					utils.Warn("Certificate obtained but nginx not configured - you can manually configure later")
+					continue
+				}
+				
+				// Both phases succeeded
 				setupResults[i].SSLConfigured = true
 			}
 

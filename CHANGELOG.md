@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CRITICAL: SSL certificate failures no longer break sites** - Completely redesigned SSL certificate obtainment to use two-phase approach: Phase 1 obtains certificate WITHOUT modifying nginx (using `certbot certonly`), Phase 2 configures nginx only if certificate was successfully obtained. This prevents sites from becoming inaccessible when certificate obtainment fails (e.g., rate limits, network issues) because nginx configuration is never modified unless we have a valid certificate
 - **PHP update now preserves SSL configuration** - `php-update` mode now automatically reconfigures SSL/HTTPS after updating Nginx vhost, preventing sites from becoming HTTP-only after PHP version changes
 - **PHP-FPM pool creation now always restarts service** - Fixed issue where socket files weren't created when pool configuration already existed, causing connection refused errors
 - **Socket verification after pool creation** - PHP pool creation now verifies the socket file was created successfully and fails with clear error message if not
