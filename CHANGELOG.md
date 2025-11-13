@@ -30,6 +30,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PHP version update mode** - Update PHP version for existing domains with `php-update` mode
 - Automatic PHP-FPM pool migration when updating PHP versions
 - Seamless PHP version switching with zero-downtime updates
+- **Build-time version injection** - Ensures consistency between installed binary and GitHub releases
+- `-version` flag to display installed version
+- Automatic version detection from git tags during builds
+- Comprehensive version management documentation (VERSIONING.md)
+- **install-from-github.sh** - Quick installer for pre-built binaries from GitHub releases
+- Automatic checksum verification during installation
+- Improved install.sh with better documentation and version detection
+- Comprehensive installation testing guide (INSTALLATION_TESTING.md)
+- Updated README with accurate installation instructions for all methods
 
 ### Features
 - **CMS Support**: Drupal and WordPress

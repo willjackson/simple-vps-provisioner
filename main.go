@@ -9,7 +9,9 @@ import (
 	"svp/types"
 )
 
-const version = "1.0.0"
+// version is set at build time via -ldflags="-X main.version=VERSION"
+// Default to dev if not set during build
+var version = "dev"
 
 func main() {
 	// Ensure running as root
@@ -37,6 +39,10 @@ func main() {
 	flag.BoolVar(&cfg.SSLEnable, "ssl", true, "Enable SSL/HTTPS with Let's Encrypt (requires -le-email)")
 	flag.BoolVar(&cfg.SwitchAll, "switch-all", false, "Switch all sites to new PHP version")
 	flag.BoolVar(&cfg.Debug, "debug", false, "Enable debug mode")
+
+	// Version flag
+	var showVersion bool
+	flag.BoolVar(&showVersion, "version", false, "Show version information")
 
 	// Custom usage message
 	flag.Usage = func() {
@@ -69,6 +75,16 @@ func main() {
 
 	// Parse flags
 	flag.Parse()
+
+	// Handle version flag
+	if showVersion {
+		fmt.Printf("Simple VPS Provisioner (svp) version %s\n", version)
+		if version == "dev" {
+			fmt.Println("This is a development build.")
+			fmt.Println("Production builds should use: go build -ldflags=\"-X main.version=VERSION\"")
+		}
+		os.Exit(0)
+	}
 
 	// Enable debug mode if requested
 	if cfg.Debug {

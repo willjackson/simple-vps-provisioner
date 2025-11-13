@@ -1,10 +1,11 @@
 #!/bin/bash
-# Installation script for Simple VPS Provisioner (svp)
+# install.sh - Build and install Simple VPS Provisioner from source
+# For installing pre-built binaries, use install-from-github.sh instead
 
 set -e
 
 echo "==================================="
-echo "Simple VPS Provisioner - Installation"
+echo "Simple VPS Provisioner - Build from Source"
 echo "==================================="
 echo ""
 
@@ -39,8 +40,19 @@ if [ ! -f "go.sum" ]; then
     go mod tidy
 fi
 
-# Build the binary
-go build -o svp
+# Determine version from git tags, or use dev
+if command -v git &> /dev/null && [ -d ".git" ]; then
+    VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+    # Remove 'v' prefix if present
+    VERSION=${VERSION#v}
+    echo "Building version: $VERSION"
+else
+    VERSION="dev"
+    echo "Building development version (no git repository found)"
+fi
+
+# Build the binary with version injection
+go build -ldflags="-X main.version=${VERSION}" -o svp
 
 # Install to /usr/local/bin
 echo "Installing to /usr/local/bin..."

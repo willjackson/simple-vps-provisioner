@@ -17,33 +17,54 @@ A Go-based command-line tool for provisioning Debian 13 (Trixie) VPS with LAMP s
 
 ## Requirements
 
+**For running svp (after installation):**
 - Debian 13 (Trixie) VPS
 - Root access
-- Go 1.21+ (for building)
+
+**For building from source (development only):**
+- Go 1.21+ (will be installed automatically by install.sh if not present)
+- Git
 
 ## Installation
 
 ### Quick Install (Recommended)
 
-Download and install the latest release from GitHub:
+**Install the latest pre-built binary from GitHub releases:**
 
 ```bash
-# Download the quick installer
-curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh -o install-svp.sh
-
-# Run the installer
-sudo bash install-svp.sh
-
-# Verify installation
-svp --help
+curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh | sudo bash
 ```
+
+**Or download and review before running:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh -o install-svp.sh && less install-svp.sh && sudo bash install-svp.sh
+```
+
+This method:
+- ✅ Downloads the latest stable release
+- ✅ Verifies checksums automatically
+- ✅ Works without Go installed
+- ✅ Fastest installation method
+- ✅ Recommended for production use
 
 ### Manual Installation from GitHub Releases
 
+**If you prefer to manually download and install:**
+
+```bash
+# Set version and download (one command)
+VERSION="1.0.23" && wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp-linux-amd64 && wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/checksums.txt && sha256sum --check --ignore-missing checksums.txt && chmod +x svp-linux-amd64 && sudo mv svp-linux-amd64 /usr/local/bin/svp && svp -version
+```
+
+<details>
+<summary>Step-by-step instructions</summary>
+
 1. **Download the binary for your system**:
    ```bash
+   # Get the latest version number from https://github.com/willjackson/simple-vps-provisioner/releases
+   VERSION="1.0.23"  # Replace with latest version
+   
    # For Linux AMD64 (most common)
-   VERSION=1.0.0
    wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp-linux-amd64
 
    # For Linux ARM64
@@ -52,36 +73,61 @@ svp --help
 
 2. **Verify checksum** (recommended):
    ```bash
+   # Download checksums file
    wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/checksums.txt
+   
+   # Verify the download
    sha256sum --check --ignore-missing checksums.txt
    ```
 
 3. **Install**:
    ```bash
+   # Make executable and move to system path
+   chmod +x svp-linux-amd64
    sudo mv svp-linux-amd64 /usr/local/bin/svp
-   sudo chmod +x /usr/local/bin/svp
+   
+   # Verify installation
+   svp -version
    ```
+
+</details>
 
 ### Building from Source (Development Only)
 
-> **Note**: Building from source is intended for development purposes. Production deployments should use pre-built binaries from GitHub Releases.
+> **Note**: Building from source is for development purposes. Production use should install pre-built binaries (see Quick Install above).
+
+**Prerequisites:**
+- Go 1.21 or higher
+- Git
+- Root access
+
+**Option 1: Using install.sh (Automatic)**
 
 ```bash
-# Install Go 1.21+
-wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
+# Clone, checkout, and install (one command)
+git clone https://github.com/willjackson/simple-vps-provisioner.git && cd simple-vps-provisioner && git checkout v1.0.23 && sudo bash install.sh
+```
 
-# Clone repository
-git clone https://github.com/willjackson/simple-vps-provisioner.git
-cd simple-vps-provisioner
+**Or current development version:**
+```bash
+git clone https://github.com/willjackson/simple-vps-provisioner.git && cd simple-vps-provisioner && sudo bash install.sh
+```
 
-# Build
-go build -o svp
+<details>
+<summary>What install.sh does</summary>
 
-# Install
-sudo mv svp /usr/local/bin/
-sudo chmod +x /usr/local/bin/svp
+The `install.sh` script will:
+- Install Go if not present
+- Detect version from git tags automatically  
+- Build with version injection
+- Install to `/usr/local/bin/svp`
+</details>
+
+**Option 2: Manual Build**
+
+```bash
+# Clone, build with version, and install (one command)
+git clone https://github.com/willjackson/simple-vps-provisioner.git && cd simple-vps-provisioner && VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev") && VERSION=${VERSION#v} && go build -ldflags="-X main.version=${VERSION}" -o svp && sudo mv svp /usr/local/bin/ && sudo chmod +x /usr/local/bin/svp && svp -version
 ```
 
 For detailed deployment and release instructions, see [DEPLOY.md](DEPLOY.md).
@@ -130,6 +176,20 @@ sudo svp -mode setup -cms drupal \
 ```bash
 # Check system configuration without making changes
 sudo svp -mode verify
+```
+
+#### Check Version
+
+```bash
+# Display the installed version
+svp -version
+```
+
+#### Update SVP
+
+```bash
+# Check for updates and install the latest version
+sudo svp -mode update
 ```
 
 #### Update PHP Version
@@ -516,6 +576,22 @@ While this tool is designed for Debian 13, it can be adapted for other distribut
 2. **Service names** - `pkg/system/services.go`
 3. **File paths** - Various package files
 4. **Package manager commands** - `apt-get` → `yum`, `dnf`, etc.
+
+## Version Management
+
+The tool uses build-time version injection to ensure consistency between installed binaries and GitHub releases.
+
+**Check your version:**
+```bash
+svp -version
+```
+
+**Update to latest:**
+```bash
+sudo svp -mode update
+```
+
+For detailed information about versioning, building, and maintaining version consistency, see [VERSIONING.md](VERSIONING.md).
 
 ## Contributing
 
