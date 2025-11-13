@@ -281,16 +281,16 @@ sudo svp -mode verify
 
 ## Getting Help
 
-- **Documentation**: [Read full documentation](/documentation/)
-- **Examples**: [View more examples](/examples/)
+- **Documentation**: [Read full documentation]({{ site.baseurl }}/documentation/)
+- **Examples**: [View more examples]({{ site.baseurl }}/examples/)
 - **GitHub Issues**: [Report problems](https://github.com/willjackson/simple-vps-provisioner/issues)
 
 ## What's Next?
 
-- [Read detailed documentation](/documentation/)
-- [Explore examples and use cases](/examples/)
-- [Learn about development](/development/)
+- [Read detailed documentation]({{ site.baseurl }}/documentation/)
+- [Explore examples and use cases]({{ site.baseurl }}/examples/)
+- [Learn about development]({{ site.baseurl }}/development/)
 
 ---
 
-[← Back to Home](/) | [Documentation →](/documentation/)
+[← Back to Home]({{ site.baseurl }}/) | [Documentation →]({{ site.baseurl }}/documentation/)

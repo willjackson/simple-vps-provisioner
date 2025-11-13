@@ -637,4 +637,4 @@ svp --help
 
 ---
 
-[← Documentation](/documentation/) | [SSL Configuration →](ssl-configuration)
+[← Documentation]({{ site.baseurl }}/documentation/) | [SSL Configuration →](ssl-configuration)

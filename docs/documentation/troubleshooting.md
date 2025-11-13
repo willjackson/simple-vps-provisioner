@@ -360,4 +360,4 @@ If you're still experiencing issues:
 
 ---
 
-[← Back to Documentation](/documentation/) | [Examples →](/examples/)
+[← Back to Documentation]({{ site.baseurl }}/documentation/) | [Examples →]({{ site.baseurl }}/examples/)

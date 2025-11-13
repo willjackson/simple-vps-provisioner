@@ -612,11 +612,11 @@ tar -czf $BACKUP_DIR/$DOMAIN-code.tar.gz \
 
 ## More Help
 
-- [Full Documentation](/documentation/)
-- [Command-Line Reference](/documentation/command-line)
-- [Troubleshooting Guide](/documentation/troubleshooting)
+- [Full Documentation]({{ site.baseurl }}/documentation/)
+- [Command-Line Reference]({{ site.baseurl }}/documentation/command-line)
+- [Troubleshooting Guide]({{ site.baseurl }}/documentation/troubleshooting)
 - [GitHub Issues](https://github.com/willjackson/simple-vps-provisioner/issues)
 
 ---
 
-[← Back to Home](/) | [Documentation →](/documentation/)
+[← Back to Home]({{ site.baseurl }}/) | [Documentation →]({{ site.baseurl }}/documentation/)

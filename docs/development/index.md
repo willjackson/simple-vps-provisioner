@@ -129,8 +129,8 @@ See [full contributing guidelines](#contributing-1) for details.
 
 ---
 
-[View Complete Development Guide →](/development/guide)
+[View Complete Development Guide →]({{ site.baseurl }}/development/guide)
 
 ---
 
-[← Back to Home](/) | [Documentation →](/documentation/)
+[← Back to Home]({{ site.baseurl }}/) | [Documentation →]({{ site.baseurl }}/documentation/)

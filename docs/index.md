@@ -114,9 +114,9 @@ sudo svp -mode setup -cms wordpress \
 ## What's Next?
 
 <div class="button-row">
-  <a href="/getting-started" class="button">Get Started →</a>
-  <a href="/documentation/" class="button secondary">Read Documentation</a>
-  <a href="/examples/" class="button secondary">View Examples</a>
+  <a href="{{ site.baseurl }}/getting-started" class="button">Get Started →</a>
+  <a href="{{ site.baseurl }}/documentation/" class="button secondary">Read Documentation</a>
+  <a href="{{ site.baseurl }}/examples/" class="button secondary">View Examples</a>
 </div>
 
 ## Features at a Glance

@@ -10,7 +10,7 @@ Complete reference for Simple VPS Provisioner.
 ## Table of Contents
 
 ### Installation & Setup
-- [Getting Started](/getting-started)
+- [Getting Started]({{ site.baseurl }}/getting-started)
 - [System Requirements](#system-requirements)
 - [Installation Methods](#installation-methods)
 - [First Time Setup](#first-time-setup)
@@ -253,4 +253,4 @@ Explore detailed documentation for specific features:
 
 ---
 
-[← Back to Home](/) | [Examples →](/examples/)
+[← Back to Home]({{ site.baseurl }}/) | [Examples →]({{ site.baseurl }}/examples/)

@@ -7,7 +7,7 @@ title: Complete Development Guide
 
 Comprehensive guide for developing and contributing to Simple VPS Provisioner.
 
-[View Quick Development Overview →](/development/)
+[View Quick Development Overview →]({{ site.baseurl }}/development/)
 
 ## Table of Contents
 
@@ -488,4 +488,4 @@ go mod tidy
 
 ---
 
-[← Back to Development Overview](/development/) | [Documentation →](/documentation/)
+[← Back to Development Overview]({{ site.baseurl }}/development/) | [Documentation →]({{ site.baseurl }}/documentation/)
