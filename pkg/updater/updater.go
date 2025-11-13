@@ -147,7 +147,7 @@ func Update(currentVersion string) error {
 			
 			// First, check if the binary name is in the checksums file
 			checkExists := fmt.Sprintf("grep -q '%s' %s", actualBinaryName, tmpChecksum)
-			if _, err := utils.RunShell(checkExists); err != nil {
+			if _, checkErr := utils.RunShell(checkExists); checkErr != nil {
 				utils.Warn("Binary %s not found in checksums.txt, skipping verification", actualBinaryName)
 			} else {
 				// Verify checksum
