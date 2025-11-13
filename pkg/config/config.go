@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	ConfigDir   = "/etc/simple-host-manager"
-	SitesDir    = "/etc/simple-host-manager/sites"
-	PHPConfFile = "/etc/simple-host-manager/php.conf"
+	ConfigDir   = "/etc/svp"
+	SitesDir    = "/etc/svp/sites"
+	PHPConfFile = "/etc/svp/php.conf"
 )
 
 // EnsureConfigDirs creates the configuration directories if they don't exist

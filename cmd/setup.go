@@ -21,6 +21,18 @@ func FullSetup(cfg *types.Config) error {
 	fmt.Printf("CMS: %s\n", cfg.CMS)
 	fmt.Println()
 
+	// Track setup results for summary
+	type DomainSetupResult struct {
+		Domain          string
+		DomainDir       string
+		SSLConfigured   bool
+		FreshInstall    bool
+		DBImported      bool
+		ConfigImported  bool
+		InstallFailed   bool
+	}
+	var setupResults []DomainSetupResult
+
 	// Ensure configuration directories
 	if err := config.EnsureConfigDirs(); err != nil {
 		return err
@@ -163,6 +175,17 @@ func FullSetup(cfg *types.Config) error {
 	for _, domain := range domains {
 		domainDir := filepath.Join(cfg.Webroot, domain)
 
+		// Initialize result tracking for this domain
+		result := DomainSetupResult{
+			Domain:        domain,
+			DomainDir:     domainDir,
+			SSLConfigured: false,
+			FreshInstall:  false,
+			DBImported:    dbImportPath != "",
+			ConfigImported: false,
+			InstallFailed: false,
+		}
+
 		// Determine webroot for this domain
 		siteWebroot := domainDir
 		if cfg.CMS == "drupal" {
@@ -245,19 +268,27 @@ func FullSetup(cfg *types.Config) error {
 			}
 			
 			// Install Drupal site if not already installed (skipped if db provided)
-			if err := cms.InstallDrupalSite(domain, drushDir, adminUser, dbImportPath); err != nil {
+			if err := cms.InstallDrupalSite(domain, drushDir, adminUser, dbImportPath, config.SitesDir); err != nil {
 				utils.Warn("Failed to install Drupal site: %v", err)
+				result.InstallFailed = true
+			} else if dbImportPath == "" {
+				result.FreshInstall = true
 			}
 			
 			// Import configuration only if database was NOT imported
 			if dbImportPath == "" {
 				if err := cms.ImportDrupalConfig(domain, drushDir, adminUser, false); err != nil {
 					utils.Warn("Failed to import configuration: %v", err)
+				} else {
+					result.ConfigImported = true
 				}
 			} else {
 				utils.Skip("Skipping config import (database was imported)")
 			}
 		}
+
+		// Save result for this domain
+		setupResults = append(setupResults, result)
 	}
 
 	// Reload Nginx
@@ -274,7 +305,7 @@ func FullSetup(cfg *types.Config) error {
 		}
 
 		// Obtain/reconfigure certificates for all domains
-		for _, domain := range domains {
+		for i, domain := range domains {
 			domainDir := filepath.Join(cfg.Webroot, domain)
 			
 			// Determine webroot for this domain (same logic as earlier)
@@ -307,6 +338,7 @@ func FullSetup(cfg *types.Config) error {
 					continue
 				}
 				utils.Ok("SSL reconfigured for %s", domain)
+				setupResults[i].SSLConfigured = true
 			} else {
 				// Obtain new certificate
 				if err := ssl.ObtainCertificate(domain, cfg.LEEmail); err != nil {
@@ -322,6 +354,7 @@ func FullSetup(cfg *types.Config) error {
 					utils.Warn("Failed to obtain SSL for %s: %v", domain, err)
 					continue
 				}
+				setupResults[i].SSLConfigured = true
 			}
 
 			// Fix SSL docroot to match HTTP docroot
@@ -383,23 +416,76 @@ func FullSetup(cfg *types.Config) error {
 	fmt.Println("==========================================================")
 	fmt.Println()
 	fmt.Printf("CMS: %s\n", cfg.CMS)
-	fmt.Printf("Domain(s): %s\n", strings.Join(domains, ", "))
-	fmt.Printf("Webroot: %s\n", cfg.Webroot)
 	fmt.Printf("PHP Version: %s\n", cfg.PHPVersion)
+	fmt.Printf("Database Credentials: %s\n", config.SitesDir)
 	fmt.Println()
-	fmt.Println("Next steps:")
-	if cfg.CMS == "drupal" {
-		for _, domain := range domains {
-			fmt.Printf("  • Complete Drupal installation: http://%s/install.php\n", domain)
-			fmt.Printf("  • Or use Drush: drush-%s site:install\n", domain)
+
+	// Show details for each domain
+	for _, result := range setupResults {
+		fmt.Println("----------------------------------------------------------")
+		fmt.Printf("Domain: %s\n", result.Domain)
+		fmt.Printf("Location: %s\n", result.DomainDir)
+		
+		// Show what was done
+		if result.FreshInstall {
+			fmt.Println("Status: Fresh Drupal installation completed")
+		} else if result.DBImported {
+			fmt.Println("Status: Database imported successfully")
+		} else if result.InstallFailed {
+			fmt.Println("Status: Installation incomplete (manual steps required)")
 		}
-	} else {
-		for _, domain := range domains {
-			fmt.Printf("  • Complete WordPress installation: http://%s/wp-admin/install.php\n", domain)
+		
+		if result.ConfigImported {
+			fmt.Println("Configuration: Imported from config/sync")
 		}
+		
+		if result.SSLConfigured {
+			fmt.Println("SSL/HTTPS: Enabled")
+		} else {
+			fmt.Println("SSL/HTTPS: Not configured (HTTP only)")
+		}
+		fmt.Println()
+		
+		// Generate appropriate URLs
+		protocol := "http"
+		if result.SSLConfigured {
+			protocol = "https"
+		}
+		
+		// Next steps based on what was done
+		fmt.Println("Next steps:")
+		
+		if cfg.CMS == "drupal" {
+			if result.InstallFailed {
+				// Installation failed - give manual instructions
+				fmt.Printf("  • Complete installation manually: %s://%s/install.php\n", protocol, result.Domain)
+				fmt.Printf("  • Or use Drush: drush-%s site:install\n", result.Domain)
+			} else {
+				// Successful install or import - provide access links
+				fmt.Printf("  • Login to admin: drush-%s uli\n", result.Domain)
+				fmt.Printf("  • Visit homepage: %s://%s\n", protocol, result.Domain)
+				fmt.Printf("  • Check status: %s://%s/admin/reports/status\n", protocol, result.Domain)
+				
+				if result.DBImported {
+					fmt.Println("  • Sync files: rsync -avz user@old-server:/path/to/files/ " + result.DomainDir + "/web/sites/default/files/")
+				}
+			}
+		} else if cfg.CMS == "wordpress" {
+			if result.InstallFailed {
+				fmt.Printf("  • Complete installation: %s://%s/wp-admin/install.php\n", protocol, result.Domain)
+			} else {
+				fmt.Printf("  • Visit site: %s://%s\n", protocol, result.Domain)
+				fmt.Printf("  • Admin panel: %s://%s/wp-admin\n", protocol, result.Domain)
+				
+				if result.DBImported {
+					fmt.Println("  • Sync uploads: rsync -avz user@old-server:/path/to/wp-content/uploads/ " + result.DomainDir + "/wp-content/uploads/")
+				}
+			}
+		}
+		fmt.Println()
 	}
-	fmt.Println()
-	fmt.Println("Database credentials saved in:", config.SitesDir)
+	
+	fmt.Println("==========================================================")
 	fmt.Println()
 
 	return nil

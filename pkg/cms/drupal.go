@@ -453,7 +453,7 @@ func generateHashSalt() string {
 }
 
 // InstallDrupalSite runs drush site-install if needed (when no database import provided)
-func InstallDrupalSite(domain, projectDir, adminUser, dbImport string) error {
+func InstallDrupalSite(domain, projectDir, adminUser, dbImport, sitesDir string) error {
 	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
 
 	if !utils.CheckFileExists(drushPath) {
@@ -474,10 +474,19 @@ func InstallDrupalSite(domain, projectDir, adminUser, dbImport string) error {
 		return nil
 	}
 
+	// Read database credentials
+	dbName, dbUser, dbPass, exists := database.ReadDatabaseCredentials(domain, sitesDir)
+	if !exists {
+		return fmt.Errorf("database credentials not found for %s", domain)
+	}
+
 	// Fresh install with site-install
 	utils.Log("Installing Drupal via drush site-install...")
 
-	cmd := fmt.Sprintf("cd %s && sudo -u %s %s site-install minimal -y --account-name=admin --account-pass=admin", projectDir, adminUser, drushPath)
+	// Construct database URL: mysql://user:pass@host/dbname
+	dbURL := fmt.Sprintf("mysql://%s:%s@localhost/%s", dbUser, dbPass, dbName)
+
+	cmd := fmt.Sprintf("cd %s && sudo -u %s %s site-install minimal -y --account-name=admin --account-pass=admin --db-url='%s'", projectDir, adminUser, drushPath, dbURL)
 	_, err = utils.RunShell(cmd)
 	if err != nil {
 		return fmt.Errorf("drush site-install failed: %v", err)

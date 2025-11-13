@@ -13,8 +13,6 @@ func SetupFirewall(enable bool, verifyOnly bool) error {
 		return nil
 	}
 
-	utils.Section("Firewall")
-
 	// Check if UFW is installed
 	if !utils.CheckPackageInstalled("ufw") {
 		if verifyOnly {
