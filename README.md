@@ -29,7 +29,7 @@ Download and install the latest release from GitHub:
 
 ```bash
 # Download the quick installer
-curl -fsSL https://raw.githubusercontent.com/YOURORG/YOURREPO/main/install-from-github.sh -o install-svp.sh
+curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh -o install-svp.sh
 
 # Run the installer
 sudo bash install-svp.sh
@@ -44,15 +44,15 @@ svp --help
    ```bash
    # For Linux AMD64 (most common)
    VERSION=1.0.0
-   wget https://github.com/YOURORG/YOURREPO/releases/download/v${VERSION}/svp-linux-amd64
+   wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp-linux-amd64
 
    # For Linux ARM64
-   wget https://github.com/YOURORG/YOURREPO/releases/download/v${VERSION}/svp-linux-arm64
+   wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp-linux-arm64
    ```
 
 2. **Verify checksum** (recommended):
    ```bash
-   wget https://github.com/YOURORG/YOURREPO/releases/download/v${VERSION}/checksums.txt
+   wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/checksums.txt
    sha256sum --check --ignore-missing checksums.txt
    ```
 
@@ -73,8 +73,8 @@ sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin
 
 # Clone repository
-git clone https://github.com/YOURORG/YOURREPO.git
-cd YOURREPO
+git clone https://github.com/willjackson/simple-vps-provisioner.git
+cd simple-vps-provisioner
 
 # Build
 go build -o svp
