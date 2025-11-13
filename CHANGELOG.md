@@ -24,15 +24,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DNS verification before SSL certificate issuance** - Automatically checks if domain DNS points to server before attempting Let's Encrypt certificate
 - Interactive DNS check with options to retry, continue without HTTPS, or abort
 - Multiple fallback methods for IP and DNS resolution (dig, nslookup, host)
+- **Database reuse on reprovisioning** - Reuses existing database credentials and drops tables with drush sql-drop instead of creating new databases
+- Automatic table dropping using drush sql-drop with SQL fallback
+- Existing database credential detection and reuse
 
 ### Features
 - **CMS Support**: Drupal and WordPress
 - **Web Stack**: Nginx + PHP-FPM 8.3 (configurable)
-- **Database**: MariaDB with automatic database creation
+- **Database**: MariaDB with automatic database creation and reuse on reprovisioning
 - **Security**: Firewall, PHP hardening, secure credentials, DNS verification for SSL
 - **SSL/HTTPS**: Let's Encrypt certificates with automatic DNS verification
 - **Isolation**: Per-domain PHP-FPM pools for better security and resource management
 - **Flexibility**: Support for Git deployments and custom configurations
+- **Smart Reprovisioning**: Reuses databases and drops tables cleanly with drush
 
 ## [1.0.0] - YYYY-MM-DD
 

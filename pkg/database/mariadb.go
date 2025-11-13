@@ -76,6 +76,42 @@ func GeneratePassword(length int) (string, error) {
 	return string(password), nil
 }
 
+// ReadDatabaseCredentials reads existing database credentials from file
+func ReadDatabaseCredentials(domain string, sitesDir string) (dbName, dbUser, dbPass string, exists bool) {
+	credsFile := fmt.Sprintf("%s/%s.db.txt", sitesDir, domain)
+	
+	if !utils.CheckFileExists(credsFile) {
+		return "", "", "", false
+	}
+	
+	utils.Log("Found existing database credentials for %s", domain)
+	
+	// Read credentials file
+	content, err := utils.RunShell(fmt.Sprintf("cat %s", credsFile))
+	if err != nil {
+		return "", "", "", false
+	}
+	
+	// Parse credentials
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "Database: ") {
+			dbName = strings.TrimSpace(strings.TrimPrefix(line, "Database: "))
+		} else if strings.HasPrefix(line, "Username: ") {
+			dbUser = strings.TrimSpace(strings.TrimPrefix(line, "Username: "))
+		} else if strings.HasPrefix(line, "Password: ") {
+			dbPass = strings.TrimSpace(strings.TrimPrefix(line, "Password: "))
+		}
+	}
+	
+	if dbName != "" && dbUser != "" && dbPass != "" {
+		utils.Ok("Using existing database: %s", dbName)
+		return dbName, dbUser, dbPass, true
+	}
+	
+	return "", "", "", false
+}
+
 // CreateDatabase creates a database and user for a domain
 func CreateDatabase(domain string, sitesDir string) (dbName, dbUser, dbPass string, err error) {
 	// Sanitize database name (remove dots and dashes, keep only alphanumeric and underscore)

@@ -137,29 +137,68 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		} else {
 			utils.Verify("Drush already in composer.json")
 		}
+		
+		// If we have existing database but couldn't drop tables earlier (drush wasn't available),
+		// do it now after drush is installed
+		if existingDB && utils.CheckFileExists(filepath.Join(composerDir, "vendor/bin/drush")) {
+			// Check if tables still exist (they would if we couldn't drop earlier)
+			checkTables := fmt.Sprintf("mysql -u%s -p%s %s -e 'SHOW TABLES;' | wc -l", dbUser, dbPass, dbName)
+			tableCount, err := utils.RunShell(checkTables)
+			if err == nil && strings.TrimSpace(tableCount) != "0" {
+				utils.Log("Database has existing tables, clearing now...")
+				if err := DropDatabaseTables(composerDir, adminUser, domain); err != nil {
+					utils.Warn("Failed to drop tables with drush: %v", err)
+				}
+			}
+		}
 	}
 
-	// Create database
-	dbName, dbUser, dbPass, err := database.CreateDatabase(domain, sitesDir)
-	if err != nil {
-		return fmt.Errorf("failed to create database: %v", err)
+	// Check for existing database credentials and handle database setup
+	dbName, dbUser, dbPass := "", "", ""
+	existingDB := false
+	
+	// Check if database credentials already exist
+	if existingDBName, existingDBUser, existingDBPass, exists := database.ReadDatabaseCredentials(domain, sitesDir); exists {
+		dbName = existingDBName
+		dbUser = existingDBUser
+		dbPass = existingDBPass
+		existingDB = true
+		utils.Ok("Using existing database credentials")
+		
+		// If we have existing database and drush is available, drop all tables
+		if utils.CheckFileExists(filepath.Join(composerDir, "vendor/bin/drush")) {
+			utils.Log("Clearing existing database tables...")
+			if err := DropDatabaseTables(composerDir, adminUser, domain); err != nil {
+				utils.Warn("Failed to drop tables with drush: %v", err)
+				utils.Log("Falling back to SQL method...")
+				// Fallback to SQL method if drush fails
+				dropTablesCmd := fmt.Sprintf("mysql -u%s -p%s %s -e \"SET FOREIGN_KEY_CHECKS = 0; SET GROUP_CONCAT_MAX_LEN=32768; SET @tables = NULL; SELECT GROUP_CONCAT('\\`', table_name, '\\`') INTO @tables FROM information_schema.tables WHERE table_schema = '%s'; SELECT IFNULL(@tables,'dummy') INTO @tables; SET @tables = CONCAT('DROP TABLE IF EXISTS ', @tables); PREPARE stmt FROM @tables; EXECUTE stmt; DEALLOCATE PREPARE stmt; SET FOREIGN_KEY_CHECKS = 1;\"", dbUser, dbPass, dbName, dbName)
+				_, err = utils.RunShell(dropTablesCmd)
+				if err != nil {
+					utils.Warn("Failed to drop tables (may be empty): %v", err)
+				} else {
+					utils.Ok("Tables dropped using SQL")
+				}
+			}
+		} else {
+			utils.Warn("Drush not available yet, will clear database after composer install")
+		}
+	} else {
+		// No existing credentials, create new database
+		var err error
+		dbName, dbUser, dbPass, err = database.CreateDatabase(domain, sitesDir)
+		if err != nil {
+			return fmt.Errorf("failed to create database: %v", err)
+		}
 	}
 
-	// Import database if provided (do this before settings.php creation)
+	// Import database if provided (database already cleared above)
 	if dbImport != "" {
 		if !utils.CheckFileExists(dbImport) {
 			return fmt.Errorf("database file not found: %s", dbImport)
 		}
 		
 		utils.Log("Importing database from %s...", dbImport)
-		
-		// Drop all tables in existing database
-		utils.Log("Dropping all tables in database %s...", dbName)
-		dropTablesCmd := fmt.Sprintf("mysql -u%s -p%s %s -e \"SET FOREIGN_KEY_CHECKS = 0; SET GROUP_CONCAT_MAX_LEN=32768; SET @tables = NULL; SELECT GROUP_CONCAT('\\`', table_name, '\\`') INTO @tables FROM information_schema.tables WHERE table_schema = '%s'; SELECT IFNULL(@tables,'dummy') INTO @tables; SET @tables = CONCAT('DROP TABLE IF EXISTS ', @tables); PREPARE stmt FROM @tables; EXECUTE stmt; DEALLOCATE PREPARE stmt; SET FOREIGN_KEY_CHECKS = 1;\"", dbUser, dbPass, dbName, dbName)
-		_, err = utils.RunShell(dropTablesCmd)
-		if err != nil {
-			utils.Warn("Failed to drop tables (may be empty): %v", err)
-		}
 		
 		// Import database (handle .gz files)
 		var importCmd string
@@ -171,7 +210,7 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 			importCmd = fmt.Sprintf("mysql -u%s -p%s %s < %s", dbUser, dbPass, dbName, dbImport)
 		}
 		
-		_, err = utils.RunShell(importCmd)
+		_, err := utils.RunShell(importCmd)
 		if err != nil {
 			return fmt.Errorf("database import failed: %v", err)
 		}
@@ -380,6 +419,28 @@ exec %s "$@"
 	}
 
 	utils.Ok("Drush wrapper created: drush-%s", domain)
+	return nil
+}
+
+// DropDatabaseTables drops all tables from the database using drush sql-drop
+func DropDatabaseTables(projectDir, adminUser, domain string) error {
+	drushPath := filepath.Join(projectDir, "vendor/bin/drush")
+	
+	if !utils.CheckFileExists(drushPath) {
+		utils.Warn("Drush not found at %s, cannot drop tables", drushPath)
+		return fmt.Errorf("drush not found")
+	}
+	
+	utils.Log("Dropping all tables from database for %s using drush...", domain)
+	
+	// Use drush sql-drop to drop all tables
+	cmd := fmt.Sprintf("cd %s && sudo -u %s %s sql-drop -y", projectDir, adminUser, drushPath)
+	_, err := utils.RunShell(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to drop database tables: %v", err)
+	}
+	
+	utils.Ok("All tables dropped from database")
 	return nil
 }
 
