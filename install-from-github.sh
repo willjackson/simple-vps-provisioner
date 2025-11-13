@@ -46,12 +46,11 @@ if [ "$OS" != "linux" ]; then
     exit 1
 fi
 
-BINARY_FILE="${BINARY_NAME}-${OS}-${ARCH}"
+# Note: We'll determine the actual binary filename after getting the version
 
 echo "System Information:"
 echo "  OS: $OS"
 echo "  Architecture: $ARCH"
-echo "  Binary: $BINARY_FILE"
 echo ""
 
 # Check for required commands
@@ -86,20 +85,37 @@ else
     RELEASE_JSON=$(wget -qO- "$RELEASE_URL")
 fi
 
-# Extract version tag and download URL
+# Extract version tag
 VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
-DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep "browser_download_url.*${BINARY_FILE}" | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
 
-if [ -z "$VERSION" ] || [ -z "$DOWNLOAD_URL" ]; then
-    echo "Error: Could not find release information"
+if [ -z "$VERSION" ]; then
+    echo "Error: Could not find version tag"
     echo "Please check:"
     echo "  1. Repository exists: https://github.com/${REPO_OWNER}/${REPO_NAME}"
     echo "  2. Releases are available"
-    echo "  3. Binary ${BINARY_FILE} exists in latest release"
+    exit 1
+fi
+
+# Remove 'v' prefix from version for binary name
+VERSION_NUMBER="${VERSION#v}"
+
+# Goreleaser naming convention: svp_VERSION_OS_ARCH
+BINARY_FILE="${BINARY_NAME}_${VERSION_NUMBER}_${OS}_${ARCH}"
+
+# Extract download URL
+DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep "browser_download_url.*${BINARY_FILE}" | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+
+if [ -z "$DOWNLOAD_URL" ]; then
+    echo "Error: Could not find binary in release"
+    echo "Looking for: ${BINARY_FILE}"
+    echo "Please check:"
+    echo "  1. Repository exists: https://github.com/${REPO_OWNER}/${REPO_NAME}"
+    echo "  2. Binary ${BINARY_FILE} exists in latest release"
     exit 1
 fi
 
 echo "Latest version: $VERSION"
+echo "Binary: $BINARY_FILE"
 echo "Download URL: $DOWNLOAD_URL"
 echo ""
 
@@ -118,7 +134,7 @@ if [ ! -f "$BINARY_FILE" ]; then
     exit 1
 fi
 
-# Download checksums
+# Download checksums (goreleaser uses checksums.txt)
 CHECKSUM_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${VERSION}/checksums.txt"
 echo "Downloading checksums..."
 download_file "$CHECKSUM_URL" "checksums.txt" 2>/dev/null || true

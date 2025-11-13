@@ -53,7 +53,7 @@ This method:
 
 ```bash
 # Set version and download (one command)
-VERSION="1.0.23" && wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp-linux-amd64 && wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/checksums.txt && sha256sum --check --ignore-missing checksums.txt && chmod +x svp-linux-amd64 && sudo mv svp-linux-amd64 /usr/local/bin/svp && svp -version
+VERSION="1.0.24" && wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp_${VERSION}_linux_amd64 && wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/checksums.txt && sha256sum --check --ignore-missing checksums.txt && chmod +x svp_${VERSION}_linux_amd64 && sudo mv svp_${VERSION}_linux_amd64 /usr/local/bin/svp && svp -version
 ```
 
 <details>
@@ -62,13 +62,13 @@ VERSION="1.0.23" && wget https://github.com/willjackson/simple-vps-provisioner/r
 1. **Download the binary for your system**:
    ```bash
    # Get the latest version number from https://github.com/willjackson/simple-vps-provisioner/releases
-   VERSION="1.0.23"  # Replace with latest version
+   VERSION="1.0.24"  # Replace with latest version
    
    # For Linux AMD64 (most common)
-   wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp-linux-amd64
+   wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp_${VERSION}_linux_amd64
 
    # For Linux ARM64
-   wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp-linux-arm64
+   wget https://github.com/willjackson/simple-vps-provisioner/releases/download/v${VERSION}/svp_${VERSION}_linux_arm64
    ```
 
 2. **Verify checksum** (recommended):
@@ -82,9 +82,10 @@ VERSION="1.0.23" && wget https://github.com/willjackson/simple-vps-provisioner/r
 
 3. **Install**:
    ```bash
-   # Make executable and move to system path
-   chmod +x svp-linux-amd64
-   sudo mv svp-linux-amd64 /usr/local/bin/svp
+   # Make executable and move to system path (update VERSION if needed)
+   VERSION="1.0.24"
+   chmod +x svp_${VERSION}_linux_amd64
+   sudo mv svp_${VERSION}_linux_amd64 /usr/local/bin/svp
    
    # Verify installation
    svp -version
@@ -105,7 +106,7 @@ VERSION="1.0.23" && wget https://github.com/willjackson/simple-vps-provisioner/r
 
 ```bash
 # Clone, checkout, and install (one command)
-git clone https://github.com/willjackson/simple-vps-provisioner.git && cd simple-vps-provisioner && git checkout v1.0.23 && sudo bash install.sh
+git clone https://github.com/willjackson/simple-vps-provisioner.git && cd simple-vps-provisioner && git checkout v1.0.24 && sudo bash install.sh
 ```
 
 **Or current development version:**

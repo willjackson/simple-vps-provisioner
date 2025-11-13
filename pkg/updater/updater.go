@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	GitHubRepo = "YOURORG/YOURREPO"
+	GitHubRepo = "willjackson/simple-vps-provisioner"
 	APIBaseURL = "https://api.github.com/repos"
 )
 
