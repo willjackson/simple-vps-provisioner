@@ -23,7 +23,7 @@ func main() {
 	// Define flags
 	flag.StringVar(&cfg.Mode, "mode", "setup", "Operation mode: setup, verify, update, php-update")
 	flag.StringVar(&cfg.CMS, "cms", "drupal", "CMS to install: drupal or wordpress")
-	flag.StringVar(&cfg.PHPVersion, "php-version", "8.3", "PHP version to install")
+	flag.StringVar(&cfg.PHPVersion, "php-version", "8.4", "PHP version to install")
 	flag.StringVar(&cfg.PrimaryDomain, "domain", "", "Primary domain name (required for setup)")
 	flag.StringVar(&cfg.ExtraDomains, "extra-domains", "", "Extra domains (comma-separated)")
 	flag.StringVar(&cfg.LEEmail, "le-email", "", "Let's Encrypt email address")

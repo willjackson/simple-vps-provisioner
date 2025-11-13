@@ -14,6 +14,7 @@ var BasePackages = []string{
 }
 
 // AddPHPRepoIfNeeded adds the Sury PHP repository if not already configured
+// For Debian testing/unstable (trixie, sid), uses native Debian packages instead
 func AddPHPRepoIfNeeded(verifyOnly bool) error {
 	// Check if Sury repo is already configured
 	output, _ := utils.RunShell("grep -q 'packages.sury.org' /etc/apt/sources.list.d/* 2>/dev/null && echo 'found'")
@@ -111,6 +112,21 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 	}
 
 	utils.Log("Detected %s %s", distroID, codename)
+
+	// For Debian testing/unstable (trixie, sid, forky), use native Debian packages
+	// These versions have recent PHP in their main repos and Sury packages
+	// from stable releases cause dependency conflicts
+	distroLower := strings.ToLower(distroID)
+	if distroLower == "debian" {
+		testingVersions := []string{"trixie", "sid", "forky"}
+		for _, testVer := range testingVersions {
+			if codename == testVer {
+				utils.Log("Debian %s detected - using native Debian PHP packages", codename)
+				utils.Verify("Native Debian repositories will be used (Sury not needed)")
+				return nil
+			}
+		}
+	}
 
 	// Sury repository may not support newer/testing Debian/Ubuntu versions yet
 	// Map to supported versions or use fallback

@@ -19,11 +19,11 @@ A Go-based command-line tool for provisioning Debian/Ubuntu VPS with LAMP stack 
 ## Requirements
 
 **For running svp (after installation):**
-- **Debian**: Version 12 (Bookworm) or 13 (Trixie)
-- **Ubuntu**: 20.04 LTS, 22.04 LTS, or 24.04 LTS (recommended)
+- **Debian 11-13** (Bullseye, Bookworm, Trixie)
+- **Ubuntu 18.04-24.04 LTS**
 - Root access
 
-**Note:** The tool automatically detects your OS and version, then configures appropriate package repositories. If PHP packages aren't available for your specific version yet, it will automatically use packages from the nearest stable release which are fully compatible.
+**Note:** The tool automatically detects your OS/version and configures appropriate repositories - no manual configuration needed.
 
 **For building from source (development only):**
 - Go 1.21+ (will be installed automatically by install.sh if not present)
@@ -242,7 +242,7 @@ This will:
 | `-cms` | CMS to install: `drupal` or `wordpress` | `drupal` |
 | `-domain` | Primary domain name (required for setup) | - |
 | `-extra-domains` | Extra domains (comma-separated) | - |
-| `-php-version` | PHP version to install | `8.3` |
+| `-php-version` | PHP version to install | `8.4` |
 | `-webroot` | Parent directory for sites | `/var/www` |
 | `-git-repo` | Git repository URL | - |
 | `-git-branch` | Git branch to checkout | `main` |
@@ -263,7 +263,7 @@ This will:
 
 1. **Base packages**: curl, wget, git, unzip, etc.
 2. **Nginx**: Web server
-3. **PHP-FPM**: PHP 8.3 (or specified version) with extensions
+3. **PHP-FPM**: PHP 8.4 (or specified version) with extensions
 4. **MariaDB**: Database server
 5. **Composer**: PHP dependency manager
 6. **Certbot**: Let's Encrypt SSL certificates (if `-le-email` provided)
@@ -339,9 +339,10 @@ This creates three separate environments, each with:
 ### Example 4: Custom PHP Version
 
 ```bash
+# Use a different PHP version (default is 8.4)
 sudo svp -mode setup -cms drupal \
   -domain example.com \
-  -php-version 8.4
+  -php-version 8.3
 ```
 
 ### Example 5: Install with SSL/HTTPS
@@ -442,37 +443,6 @@ This will:
 
 **Use case:** Testing/development where you need to maintain the same database credentials across reprovisioning
 
-### Example 11: Ubuntu Server Setup
-
-```bash
-# Works on Ubuntu 22.04 LTS, 24.04 LTS, etc.
-sudo svp -mode setup -cms drupal \
-  -domain myubuntu-site.com \
-  -le-email admin@myubuntu-site.com
-```
-
-The tool automatically:
-- Detects Ubuntu OS and version
-- Configures appropriate Ubuntu PHP repositories
-- Falls back to nearest LTS if needed
-- Everything else works identically to Debian
-
-**Output example:**
-```
-[CREATE] Adding Sury PHP repository...
-[CREATE] Detected Ubuntu jammy
-[✓] Sury PHP repository added
-[CREATE] Installing PHP 8.3 packages...
-[✓] PHP 8.3 packages installed
-```
-
-**On Ubuntu 24.04 (Noble):**
-```
-[CREATE] Detected Ubuntu noble
-[!] Ubuntu noble not yet supported by Sury, using jammy repository
-[✓] Sury PHP repository added
-```
-
 ## CMS-Specific Information
 
 ### Drupal
@@ -536,7 +506,7 @@ sudo nginx -t  # Test configuration
 
 ### Check PHP-FPM status
 ```bash
-sudo systemctl status php8.3-fpm
+sudo systemctl status php8.4-fpm
 ```
 
 ### Check MariaDB status
@@ -550,7 +520,7 @@ sudo systemctl status mariadb
 tail -f /var/log/nginx/[domain]-error.log
 
 # PHP-FPM logs
-tail -f /var/log/php8.3-fpm-[domain]-error.log
+tail -f /var/log/php8.4-fpm-[domain]-error.log
 
 # Certbot logs
 tail -f /var/log/letsencrypt/letsencrypt.log
@@ -674,37 +644,24 @@ When using Let's Encrypt SSL certificates (`-le-email` flag), your domain **must
 
 ## Supported Operating Systems
 
-This tool works on both Debian and Ubuntu:
+**Debian:**
+- Debian 11 (Bullseye)
+- Debian 12 (Bookworm)
+- Debian 13 (Trixie)
 
-### Debian Support
-- **Debian 12 (Bookworm)** - Fully supported ✅
-- **Debian 13 (Trixie)** - Fully supported ✅  
-- **Debian 11 (Bullseye)** - Supported ✅
-- **Debian Testing/Unstable** - Automatically falls back to Debian 12 packages
+**Ubuntu:**
+- Ubuntu 18.04 LTS (Bionic)
+- Ubuntu 20.04 LTS (Focal)
+- Ubuntu 22.04 LTS (Jammy)
+- Ubuntu 24.04 LTS (Noble)
 
-### Ubuntu Support
-- **Ubuntu 22.04 LTS (Jammy)** - Fully supported ✅ (Most stable)
-- **Ubuntu 20.04 LTS (Focal)** - Fully supported ✅
-- **Ubuntu 24.04 LTS (Noble)** - Supported ✅ (uses 22.04 packages)
-- **Ubuntu 18.04 LTS (Bionic)** - Supported ✅
-- **Ubuntu interim releases** - Automatically falls back to 22.04 LTS
+**Automatic Detection:** The tool automatically detects your OS and version, then intelligently selects the best PHP repository:
+- Debian stable versions use Sury's PHP repository for the latest versions
+- Debian testing/unstable use native packages (already include PHP 8.4+)
+- Ubuntu versions use Sury's PHP repository
+- Newer OS versions without dedicated packages automatically fall back to compatible versions
 
-**Note:** Ubuntu 24.04 (Noble) is very new and Sury doesn't have dedicated packages yet, so it automatically uses Ubuntu 22.04 (Jammy) packages which are fully compatible.
-
-### Automatic Version Detection
-
-The tool automatically:
-1. Detects your OS (Debian or Ubuntu)
-2. Identifies your version codename
-3. Maps unsupported versions to the nearest stable release
-4. Configures PHP repositories accordingly
-
-For example:
-- Debian 13 (Trixie) → Uses Debian 12 (Bookworm) PHP packages
-- Ubuntu 24.04 (Noble) → Uses Ubuntu 22.04 LTS (Jammy) PHP packages
-- Ubuntu 23.10 (Mantic) → Uses Ubuntu 22.04 LTS (Jammy) PHP packages
-
-This ensures compatibility even on cutting-edge or unsupported releases.
+No manual configuration required - it just works!
 
 ## Adaptability to Other Distributions
 
@@ -733,7 +690,7 @@ For detailed information about versioning, building, and maintaining version con
 
 ## Contributing
 
-This tool is based on the original Bash script `setup.sh`. Contributions are welcome!
+Contributions are welcome!
 
 ## License
 
