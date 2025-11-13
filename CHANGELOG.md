@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Database reuse on reprovisioning** - Reuses existing database credentials and drops tables with drush sql-drop instead of creating new databases
 - Automatic table dropping using drush sql-drop with SQL fallback
 - Existing database credential detection and reuse
+- **PHP version update mode** - Update PHP version for existing domains with `php-update` mode
+- Automatic PHP-FPM pool migration when updating PHP versions
+- Seamless PHP version switching with zero-downtime updates
 
 ### Features
 - **CMS Support**: Drupal and WordPress

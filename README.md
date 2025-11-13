@@ -132,11 +132,18 @@ sudo svp -mode setup -cms drupal \
 sudo svp -mode verify
 ```
 
+#### Update PHP Version
+
+```bash
+# Update PHP version for a specific domain
+sudo svp -mode php-update -domain example.com -php-version 8.4
+```
+
 ### Command-Line Options
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-mode` | Operation mode: `setup`, `verify` | `setup` |
+| `-mode` | Operation mode: `setup`, `verify`, `update`, `php-update` | `setup` |
 | `-cms` | CMS to install: `drupal` or `wordpress` | `drupal` |
 | `-domain` | Primary domain name (required for setup) | - |
 | `-extra-domains` | Extra domains (comma-separated) | - |
@@ -284,6 +291,24 @@ sudo svp -mode setup -cms drupal \
   -domain mysite.com \
   -ssl=false
 ```
+
+### Example 8: Update PHP Version
+
+```bash
+# Update a domain from PHP 8.3 to PHP 8.4
+sudo svp -mode php-update -domain example.com -php-version 8.4
+```
+
+This will:
+- Verify the domain configuration exists
+- Install PHP 8.4 if not already installed
+- Create a new PHP-FPM pool with PHP 8.4
+- Update Nginx configuration to use PHP 8.4
+- Update the site configuration file
+- Reload Nginx with the new configuration
+- Remove the old PHP-FPM pool
+
+**Note:** The tool will prompt for confirmation before making changes and show the current and new PHP versions.
 
 ## CMS-Specific Information
 

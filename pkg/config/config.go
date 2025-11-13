@@ -26,6 +26,40 @@ func EnsureConfigDirs() error {
 	return nil
 }
 
+// ReadSiteConfig reads configuration for a site
+func ReadSiteConfig(domain string) (*types.SiteConfig, error) {
+	configPath := fmt.Sprintf("%s/%s.conf", SitesDir, domain)
+
+	if !utils.CheckFileExists(configPath) {
+		return nil, fmt.Errorf("site config not found: %s", configPath)
+	}
+
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read site config: %v", err)
+	}
+
+	config := &types.SiteConfig{
+		Domain: domain,
+	}
+
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "PHP_VERSION=") {
+			config.PHPVersion = strings.Trim(strings.TrimPrefix(line, "PHP_VERSION="), "'\"")
+		} else if strings.HasPrefix(line, "WEBROOT=") {
+			config.Webroot = strings.Trim(strings.TrimPrefix(line, "WEBROOT="), "'\"")
+		}
+	}
+
+	if config.PHPVersion == "" || config.Webroot == "" {
+		return nil, fmt.Errorf("incomplete site config for %s", domain)
+	}
+
+	return config, nil
+}
+
 // WriteSiteConfig writes configuration for a site
 func WriteSiteConfig(domain, phpVersion, webroot string) error {
 	configPath := fmt.Sprintf("%s/%s.conf", SitesDir, domain)

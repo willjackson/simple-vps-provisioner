@@ -19,7 +19,7 @@ func main() {
 	cfg := &types.Config{}
 
 	// Define flags
-	flag.StringVar(&cfg.Mode, "mode", "setup", "Operation mode: setup, verify, update")
+	flag.StringVar(&cfg.Mode, "mode", "setup", "Operation mode: setup, verify, update, php-update")
 	flag.StringVar(&cfg.CMS, "cms", "drupal", "CMS to install: drupal or wordpress")
 	flag.StringVar(&cfg.PHPVersion, "php-version", "8.3", "PHP version to install")
 	flag.StringVar(&cfg.PrimaryDomain, "domain", "", "Primary domain name (required for setup)")
@@ -63,6 +63,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  svp -mode verify\n\n")
 		fmt.Fprintf(os.Stderr, "  # Check for and install updates:\n")
 		fmt.Fprintf(os.Stderr, "  svp -mode update\n\n")
+		fmt.Fprintf(os.Stderr, "  # Update PHP version for a domain:\n")
+		fmt.Fprintf(os.Stderr, "  svp -mode php-update -domain example.com -php-version 8.4\n\n")
 	}
 
 	// Parse flags
@@ -109,9 +111,23 @@ func main() {
 	case "update":
 		err = cmd.Update(version)
 
+	case "php-update":
+		// Validate required parameters
+		if cfg.PrimaryDomain == "" {
+			utils.Err("Domain is required for php-update mode")
+			utils.Err("Use: svp -mode php-update -domain example.com -php-version 8.4")
+			os.Exit(1)
+		}
+		if cfg.PHPVersion == "" {
+			utils.Err("PHP version is required for php-update mode")
+			utils.Err("Use: svp -mode php-update -domain example.com -php-version 8.4")
+			os.Exit(1)
+		}
+		err = cmd.PHPUpdate(cfg)
+
 	default:
 		utils.Err("Unknown mode: %s", cfg.Mode)
-		utils.Err("Available modes: setup, verify, update")
+		utils.Err("Available modes: setup, verify, update, php-update")
 		os.Exit(1)
 	}
 
