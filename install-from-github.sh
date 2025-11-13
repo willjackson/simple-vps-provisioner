@@ -96,10 +96,7 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
-# Remove 'v' prefix from version
-VERSION_NUMBER="${VERSION#v}"
-
-# GoReleaser naming convention: svp-OS-ARCH (without version)
+# GoReleaser naming convention: svp-OS-ARCH (without version in filename)
 BINARY_FILE="${BINARY_NAME}-${OS}-${ARCH}"
 
 # Extract download URL
