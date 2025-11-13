@@ -58,6 +58,9 @@ type Config struct {
 
 	// Debug mode
 	Debug bool
+
+	// Keep existing database (reuse credentials and drop tables)
+	KeepExistingDB bool
 }
 
 // SiteConfig represents configuration for a single site

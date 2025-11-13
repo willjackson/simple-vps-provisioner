@@ -39,6 +39,7 @@ func main() {
 	flag.BoolVar(&cfg.SSLEnable, "ssl", true, "Enable SSL/HTTPS with Let's Encrypt (requires -le-email)")
 	flag.BoolVar(&cfg.SwitchAll, "switch-all", false, "Switch all sites to new PHP version")
 	flag.BoolVar(&cfg.Debug, "debug", false, "Enable debug mode")
+	flag.BoolVar(&cfg.KeepExistingDB, "keep-existing-db", false, "Keep existing database and drop tables (default: recreate database)")
 
 	// Version flag
 	var showVersion bool
@@ -71,6 +72,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  svp -mode update\n\n")
 		fmt.Fprintf(os.Stderr, "  # Update PHP version for a domain:\n")
 		fmt.Fprintf(os.Stderr, "  svp -mode php-update -domain example.com -php-version 8.4\n\n")
+		fmt.Fprintf(os.Stderr, "  # Reprovision with fresh database (default):\n")
+		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com\n\n")
+		fmt.Fprintf(os.Stderr, "  # Reprovision keeping same database credentials:\n")
+		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -keep-existing-db\n\n")
 	}
 
 	// Parse flags

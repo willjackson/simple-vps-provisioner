@@ -177,3 +177,41 @@ Port: 3306
 
 	return dbName, dbUser, dbPass, nil
 }
+
+// DropDatabase drops a database and its user completely
+func DropDatabase(domain string, sitesDir string) error {
+	// Read existing credentials
+	dbName, dbUser, _, exists := ReadDatabaseCredentials(domain, sitesDir)
+	if !exists {
+		utils.Verify("No existing database found for %s", domain)
+		return nil
+	}
+	
+	utils.Log("Dropping database %s and user %s...", dbName, dbUser)
+	
+	// Drop database
+	dropDBSQL := fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)
+	_, err := utils.RunShell(fmt.Sprintf("mariadb -e \"%s\"", dropDBSQL))
+	if err != nil {
+		return fmt.Errorf("failed to drop database: %v", err)
+	}
+	
+	// Drop user
+	dropUserSQL := fmt.Sprintf("DROP USER IF EXISTS '%s'@'localhost';", dbUser)
+	_, err = utils.RunShell(fmt.Sprintf("mariadb -e \"%s\"", dropUserSQL))
+	if err != nil {
+		return fmt.Errorf("failed to drop user: %v", err)
+	}
+	
+	// Flush privileges
+	_, _ = utils.RunShell("mariadb -e 'FLUSH PRIVILEGES;'")
+	
+	// Remove credentials file
+	credsFile := fmt.Sprintf("%s/%s.db.txt", sitesDir, domain)
+	if utils.CheckFileExists(credsFile) {
+		_, _ = utils.RunCommand("rm", "-f", credsFile)
+	}
+	
+	utils.Ok("Database and user dropped: %s", dbName)
+	return nil
+}

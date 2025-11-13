@@ -156,7 +156,7 @@ func FullSetup(cfg *types.Config) error {
 	for _, domain := range domains {
 		if cfg.CMS == "drupal" {
 			settingsSVPAdded, err := cms.InstallDrupal(domain, cfg.Webroot, cfg.GitRepo, cfg.GitBranch,
-				cfg.DrupalRoot, cfg.Docroot, config.SitesDir, dbImportPath)
+				cfg.DrupalRoot, cfg.Docroot, config.SitesDir, dbImportPath, cfg.KeepExistingDB)
 			if err != nil {
 				return fmt.Errorf("failed to install Drupal for %s: %v", domain, err)
 			}

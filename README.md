@@ -12,6 +12,7 @@ A Go-based command-line tool for provisioning Debian 13 (Trixie) VPS with LAMP s
 - **Git deployment** - Deploy from existing repositories
 - **SSL/HTTPS support** - Automatic Let's Encrypt certificates with DNS verification
 - **DNS verification** - Automatic check before SSL certificate issuance
+- **Clean reprovisioning** - Fresh database and credentials by default when reprovisioning
 - **Idempotent** - Safe to run multiple times
 - **Security hardening** - Firewall, PHP settings, database security, HSTS, OCSP stapling
 
@@ -200,6 +201,37 @@ sudo svp -mode update
 sudo svp -mode php-update -domain example.com -php-version 8.4
 ```
 
+#### Reprovisioning Sites
+
+When running setup for an existing domain, svp will prompt you and then reprovision the site. By default, the database and user are completely dropped and recreated with fresh credentials for security.
+
+```bash
+# Reprovision with fresh database (default)
+sudo svp -mode setup -cms drupal -domain example.com
+```
+
+This will:
+- Drop the existing database and database user
+- Create a new database with **new credentials**
+- Run a fresh Drupal site-install
+- All files and code are replaced
+
+**Keep existing database (optional):**
+
+```bash
+# Reprovision but keep same database credentials
+sudo svp -mode setup -cms drupal -domain example.com -keep-existing-db
+```
+
+This will:
+- Keep the existing database and user
+- Drop all tables (clean slate)
+- **Reuse the same credentials**
+- Run a fresh Drupal site-install
+- Useful for testing without changing credentials
+
+**Note:** When importing a database with `-db /path/to/database.sql.gz`, the flag has no effect as the database is always preserved for the import.
+
 ### Command-Line Options
 
 | Flag | Description | Default |
@@ -215,6 +247,8 @@ sudo svp -mode php-update -domain example.com -php-version 8.4
 | `-drupal-root` | Drupal root path (relative to repo) | - |
 | `-docroot` | Custom docroot path | - |
 | `-db-engine` | Database engine: `mariadb` or `none` | `mariadb` |
+| `-db` | Path to database file for import (instead of site-install) | - |
+| `-keep-existing-db` | Keep existing database and drop tables (default: recreate database) | `false` |
 | `-create-swap` | Create swap: `yes`, `no`, or `auto` | `auto` |
 | `-firewall` | Enable UFW firewall | `true` |
 | `-ssl` | Enable SSL/HTTPS with Let's Encrypt | `true` |
@@ -370,6 +404,41 @@ This will:
 - Remove the old PHP-FPM pool
 
 **Note:** The tool will prompt for confirmation before making changes and show the current and new PHP versions.
+
+### Example 9: Reprovision with Fresh Database
+
+```bash
+# Reprovision example.com with completely fresh database
+sudo svp -mode setup -cms drupal -domain example.com
+```
+
+This will:
+- Prompt to delete and reprovision (y/N)
+- Remove the existing site directory
+- **Drop the old database and user completely**
+- **Create new database with fresh credentials**
+- Fresh Drupal installation
+- New settings.php with new database credentials
+
+**Use case:** Complete clean slate, new credentials for security
+
+### Example 10: Reprovision Keeping Database Credentials
+
+```bash
+# Reprovision but keep the same database credentials
+sudo svp -mode setup -cms drupal -domain example.com -keep-existing-db
+```
+
+This will:
+- Prompt to delete and reprovision (y/N)
+- Remove the existing site directory
+- **Keep the existing database and user**
+- **Drop all tables** (clean database)
+- **Reuse the same credentials**
+- Fresh Drupal installation
+- Same database credentials in settings.php
+
+**Use case:** Testing/development where you need to maintain the same database credentials across reprovisioning
 
 ## CMS-Specific Information
 
@@ -560,14 +629,15 @@ When using Let's Encrypt SSL certificates (`-le-email` flag), your domain **must
 
 1. **DNS Verification** - Automatic check before SSL certificate issuance
 2. **Database credentials** are automatically generated and saved securely
-3. **Firewall** is enabled by default (SSH, HTTP, HTTPS)
-4. **SSL/HTTPS** - Free Let's Encrypt certificates with automatic renewal
-5. **HSTS** - HTTP Strict Transport Security enabled
-6. **TLS 1.2/1.3** - Modern encryption protocols only
-7. **OCSP Stapling** - Improved SSL performance and privacy
-8. **PHP settings** are hardened (disabled dangerous functions, etc.)
-9. **File permissions** are set appropriately (admin:www-data)
-10. **Per-site isolation** via separate PHP-FPM pools
+3. **Fresh credentials on reprovision** - New database credentials created by default when reprovisioning (use `-keep-existing-db` to preserve)
+4. **Firewall** is enabled by default (SSH, HTTP, HTTPS)
+5. **SSL/HTTPS** - Free Let's Encrypt certificates with automatic renewal
+6. **HSTS** - HTTP Strict Transport Security enabled
+7. **TLS 1.2/1.3** - Modern encryption protocols only
+8. **OCSP Stapling** - Improved SSL performance and privacy
+9. **PHP settings** are hardened (disabled dangerous functions, etc.)
+10. **File permissions** are set appropriately (admin:www-data)
+11. **Per-site isolation** via separate PHP-FPM pools
 
 ## Adaptability to Other Distributions
 

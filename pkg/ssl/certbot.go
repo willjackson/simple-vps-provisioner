@@ -346,6 +346,29 @@ func FixSSLDocroot(domain, webroot string) error {
 	return nil
 }
 
+// ReconfigureSSL reconfigures SSL for a domain if certificate exists
+// This is useful after updating vhost configuration that removed SSL blocks
+func ReconfigureSSL(domain string) error {
+	// Check if certificate exists
+	certPath := fmt.Sprintf("/etc/letsencrypt/live/%s/fullchain.pem", domain)
+	if !utils.CheckFileExists(certPath) {
+		utils.Skip("No SSL certificate found for %s", domain)
+		return nil
+	}
+
+	utils.Log("Reconfiguring SSL for %s...", domain)
+
+	// Use certbot install to reconfigure nginx
+	cmd := fmt.Sprintf("certbot install --nginx -d %s --cert-name %s --non-interactive --redirect", domain, domain)
+	_, err := utils.RunShell(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to reconfigure SSL: %v", err)
+	}
+
+	utils.Ok("SSL reconfigured for %s", domain)
+	return nil
+}
+
 // EnhanceSSLConfig adds advanced security settings to nginx SSL configuration
 func EnhanceSSLConfig(domain string) error {
 	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s.conf", domain)

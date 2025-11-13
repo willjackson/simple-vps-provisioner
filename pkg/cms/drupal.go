@@ -10,7 +10,7 @@ import (
 
 // InstallDrupal installs a Drupal site for a domain
 // Returns settingsSVPAdded flag indicating if settings.svp.php was created
-func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot string, sitesDir string, dbImport string) (settingsSVPAdded bool, err error) {
+func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot string, sitesDir string, dbImport string, keepExistingDB bool) (settingsSVPAdded bool, err error) {
 	utils.Section("Installing Drupal for " + domain)
 
 	// Get admin username from www-data group
@@ -115,39 +115,52 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 		}
 	}
 
-	// Check for existing database credentials and handle database setup
-	// This needs to be done BEFORE composer install so we can use credentials
+	// Handle database setup based on keepExistingDB flag
 	dbName, dbUser, dbPass := "", "", ""
 	existingDB := false
 	
-	// Check if database credentials already exist
-	if existingDBName, existingDBUser, existingDBPass, exists := database.ReadDatabaseCredentials(domain, sitesDir); exists {
-		dbName = existingDBName
-		dbUser = existingDBUser
-		dbPass = existingDBPass
-		existingDB = true
-		utils.Ok("Using existing database credentials")
-		
-		// If we have existing database and drush is available, drop all tables
-		if utils.CheckFileExists(filepath.Join(composerDir, "vendor/bin/drush")) {
-			utils.Log("Clearing existing database tables...")
-			if err := DropDatabaseTables(composerDir, adminUser, domain); err != nil {
-				utils.Warn("Failed to drop tables with drush: %v", err)
-				utils.Log("Falling back to SQL method...")
-				// Fallback to SQL method if drush fails
-				dropTablesCmd := fmt.Sprintf("mysql -u%s -p%s %s -e \"SET FOREIGN_KEY_CHECKS = 0; SET GROUP_CONCAT_MAX_LEN=32768; SET @tables = NULL; SELECT GROUP_CONCAT('\\`', table_name, '\\`') INTO @tables FROM information_schema.tables WHERE table_schema = '%s'; SELECT IFNULL(@tables,'dummy') INTO @tables; SET @tables = CONCAT('DROP TABLE IF EXISTS ', @tables); PREPARE stmt FROM @tables; EXECUTE stmt; DEALLOCATE PREPARE stmt; SET FOREIGN_KEY_CHECKS = 1;\"", dbUser, dbPass, dbName, dbName)
-				_, err = utils.RunShell(dropTablesCmd)
-				if err != nil {
-					utils.Warn("Failed to drop tables (may be empty): %v", err)
-				} else {
-					utils.Ok("Tables dropped using SQL")
+	if keepExistingDB {
+		// Check if database credentials already exist
+		if existingDBName, existingDBUser, existingDBPass, exists := database.ReadDatabaseCredentials(domain, sitesDir); exists {
+			dbName = existingDBName
+			dbUser = existingDBUser
+			dbPass = existingDBPass
+			existingDB = true
+			utils.Ok("Using existing database credentials")
+			
+			// If we have existing database and drush is available, drop all tables
+			if utils.CheckFileExists(filepath.Join(composerDir, "vendor/bin/drush")) {
+				utils.Log("Clearing existing database tables...")
+				if err := DropDatabaseTables(composerDir, adminUser, domain); err != nil {
+					utils.Warn("Failed to drop tables with drush: %v", err)
+					utils.Log("Falling back to SQL method...")
+					// Fallback to SQL method if drush fails
+					dropTablesCmd := fmt.Sprintf("mysql -u%s -p%s %s -e \"SET FOREIGN_KEY_CHECKS = 0; SET GROUP_CONCAT_MAX_LEN=32768; SET @tables = NULL; SELECT GROUP_CONCAT('\\`', table_name, '\\`') INTO @tables FROM information_schema.tables WHERE table_schema = '%s'; SELECT IFNULL(@tables,'dummy') INTO @tables; SET @tables = CONCAT('DROP TABLE IF EXISTS ', @tables); PREPARE stmt FROM @tables; EXECUTE stmt; DEALLOCATE PREPARE stmt; SET FOREIGN_KEY_CHECKS = 1;\"", dbUser, dbPass, dbName, dbName)
+					_, err = utils.RunShell(dropTablesCmd)
+					if err != nil {
+						utils.Warn("Failed to drop tables (may be empty): %v", err)
+					} else {
+						utils.Ok("Tables dropped using SQL")
+					}
 				}
+			} else {
+				utils.Warn("Drush not available yet, will clear database after composer install")
 			}
 		} else {
-			utils.Warn("Drush not available yet, will clear database after composer install")
+			// No existing credentials, create new database
+			var err error
+			dbName, dbUser, dbPass, err = database.CreateDatabase(domain, sitesDir)
+			if err != nil {
+				return false, fmt.Errorf("failed to create database: %v", err)
+			}
 		}
 	} else {
-		// No existing credentials, create new database
+		// Default behavior: Drop existing database completely and create new one
+		if err := database.DropDatabase(domain, sitesDir); err != nil {
+			utils.Warn("Failed to drop existing database: %v", err)
+		}
+		
+		// Create fresh database with new credentials
 		var err error
 		dbName, dbUser, dbPass, err = database.CreateDatabase(domain, sitesDir)
 		if err != nil {

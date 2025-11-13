@@ -170,22 +170,30 @@ php_admin_value[session.save_path] = /tmp
 `, domain, domain, socketPath, version, domain, projectRoot)
 
 	if utils.CheckFileExists(poolFile) {
-		utils.Verify("PHP pool already exists for %s", domain)
+		utils.Log("Updating PHP %s pool for %s", version, domain)
 	} else {
 		utils.Log("Creating PHP %s pool for %s", version, domain)
-		_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", poolFile, poolConfig))
-		if err != nil {
-			return fmt.Errorf("failed to create PHP pool: %v", err)
-		}
-
-		// Restart PHP-FPM to load new pool
-		serviceName := fmt.Sprintf("php%s-fpm", version)
-		if err := system.RestartService(serviceName); err != nil {
-			return fmt.Errorf("failed to restart PHP-FPM: %v", err)
-		}
-
-		utils.Ok("PHP pool created for %s", domain)
 	}
+
+	// Always write the pool config to ensure it's up to date
+	_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", poolFile, poolConfig))
+	if err != nil {
+		return fmt.Errorf("failed to create PHP pool: %v", err)
+	}
+
+	// Always restart PHP-FPM to load/reload the pool and create the socket
+	serviceName := fmt.Sprintf("php%s-fpm", version)
+	utils.Log("Restarting %s to load pool...", serviceName)
+	if err := system.RestartService(serviceName); err != nil {
+		return fmt.Errorf("failed to restart PHP-FPM: %v", err)
+	}
+
+	// Verify the socket was created
+	if !utils.CheckFileExists(socketPath) {
+		return fmt.Errorf("PHP-FPM socket was not created: %s (check PHP-FPM logs)", socketPath)
+	}
+
+	utils.Ok("PHP pool configured for %s", domain)
 
 	return nil
 }

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **PHP update now preserves SSL configuration** - `php-update` mode now automatically reconfigures SSL/HTTPS after updating Nginx vhost, preventing sites from becoming HTTP-only after PHP version changes
+- **PHP-FPM pool creation now always restarts service** - Fixed issue where socket files weren't created when pool configuration already existed, causing connection refused errors
+- **Socket verification after pool creation** - PHP pool creation now verifies the socket file was created successfully and fails with clear error message if not
+
+### Changed
+- **Improved PHP pool creation reliability** - Pool configuration files are now always written and PHP-FPM is always restarted to ensure sockets are created, even when updating existing pools
+- **Better error messages for PHP-FPM issues** - Clearer guidance when socket creation fails, directing users to check PHP-FPM logs
+
 ### Added
 - Initial release of Simple VPS Provisioner (svp)
 - Support for Drupal provisioning with Composer and Drush
@@ -24,7 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DNS verification before SSL certificate issuance** - Automatically checks if domain DNS points to server before attempting Let's Encrypt certificate
 - Interactive DNS check with options to retry, continue without HTTPS, or abort
 - Multiple fallback methods for IP and DNS resolution (dig, nslookup, host)
-- **Database reuse on reprovisioning** - Reuses existing database credentials and drops tables with drush sql-drop instead of creating new databases
+- **Fresh database on reprovisioning (default)** - By default, drops entire database and user completely when reprovisioning, creates fresh database with new credentials for better security
+- **Optional database preservation** - New `-keep-existing-db` flag to preserve existing database and credentials when reprovisioning (drops tables only)
+- `DropDatabase()` function in `pkg/database/mariadb.go` to completely remove database and user
 - Automatic table dropping using drush sql-drop with SQL fallback
 - Existing database credential detection and reuse
 - **PHP version update mode** - Update PHP version for existing domains with `php-update` mode
@@ -43,12 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features
 - **CMS Support**: Drupal and WordPress
 - **Web Stack**: Nginx + PHP-FPM 8.3 (configurable)
-- **Database**: MariaDB with automatic database creation and reuse on reprovisioning
-- **Security**: Firewall, PHP hardening, secure credentials, DNS verification for SSL
+- **Database**: MariaDB with automatic database creation; fresh credentials by default on reprovisioning
+- **Security**: Firewall, PHP hardening, secure credentials, DNS verification for SSL, fresh database credentials on reprovisioning
 - **SSL/HTTPS**: Let's Encrypt certificates with automatic DNS verification
 - **Isolation**: Per-domain PHP-FPM pools for better security and resource management
 - **Flexibility**: Support for Git deployments and custom configurations
-- **Smart Reprovisioning**: Reuses databases and drops tables cleanly with drush
+- **Clean Reprovisioning**: Fresh database and credentials by default; optional flag to preserve database
 
 ## [1.0.0] - YYYY-MM-DD
 

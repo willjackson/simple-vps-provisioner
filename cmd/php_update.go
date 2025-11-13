@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"svp/pkg/config"
+	"svp/pkg/ssl"
 	"svp/pkg/system"
 	"svp/pkg/utils"
 	"svp/pkg/web"
@@ -101,6 +102,13 @@ func PHPUpdate(cfg *types.Config) error {
 	// Update Nginx vhost to use new PHP version
 	if err := web.CreateNginxVhost(domain, siteConfig.Webroot, newPHPVersion); err != nil {
 		return fmt.Errorf("failed to update Nginx vhost: %v", err)
+	}
+
+	// Reconfigure SSL if certificate exists (vhost recreation removes SSL config)
+	utils.Section("Restoring SSL Configuration")
+	if err := ssl.ReconfigureSSL(domain); err != nil {
+		utils.Warn("Failed to reconfigure SSL: %v", err)
+		utils.Warn("You may need to run manually: certbot install --nginx -d %s --cert-name %s --redirect", domain, domain)
 	}
 
 	// Update site configuration

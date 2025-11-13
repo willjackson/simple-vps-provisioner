@@ -134,13 +134,39 @@ func Update(currentVersion string) error {
 			utils.Warn("Failed to download checksums, skipping verification")
 		} else {
 			defer os.Remove(tmpChecksum)
-			// Verify checksum using the actual binary name found in the release
-			cmd := fmt.Sprintf("cd /tmp && sha256sum --check --ignore-missing %s 2>&1 | grep %s", tmpChecksum, actualBinaryName)
-			_, err = utils.RunShell(cmd)
-			if err != nil {
-				return fmt.Errorf("checksum verification failed")
+			
+			// Debug: Show what we're looking for
+			if os.Getenv("DEBUG") == "1" {
+				utils.Log("Looking for binary: %s", actualBinaryName)
+				utils.Log("Binary location: %s", tmpBinary)
+				utils.Log("Checksums file contents:")
+				contents, _ := utils.RunShell(fmt.Sprintf("cat %s", tmpChecksum))
+				fmt.Println(contents)
+				utils.Log("Attempting checksum verification...")
 			}
-			utils.Ok("Checksum verified")
+			
+			// First, check if the binary name is in the checksums file
+			checkExists := fmt.Sprintf("grep -q '%s' %s", actualBinaryName, tmpChecksum)
+			if _, err := utils.RunShell(checkExists); err != nil {
+				utils.Warn("Binary %s not found in checksums.txt, skipping verification", actualBinaryName)
+			} else {
+				// Verify checksum
+				// Note: sha256sum -c expects files to be in the same directory as checksums.txt
+				cmd := fmt.Sprintf("cd /tmp && sha256sum -c %s 2>&1", tmpChecksum)
+				output, err := utils.RunShell(cmd)
+				
+				if os.Getenv("DEBUG") == "1" {
+					utils.Log("Full sha256sum output:")
+					fmt.Println(output)
+				}
+				
+				// Check if our specific binary passed
+				if strings.Contains(output, actualBinaryName+": OK") {
+					utils.Ok("Checksum verified")
+				} else {
+					return fmt.Errorf("checksum verification failed for %s", actualBinaryName)
+				}
+			}
 		}
 	}
 
