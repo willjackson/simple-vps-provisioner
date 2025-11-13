@@ -1,6 +1,6 @@
 # Simple VPS Provisioner (svp)
 
-A Go-based command-line tool for provisioning Debian 13 (Trixie) VPS with LAMP stack for Drupal or WordPress.
+A Go-based command-line tool for provisioning Debian/Ubuntu VPS with LAMP stack for Drupal or WordPress.
 
 ## Features
 
@@ -19,8 +19,11 @@ A Go-based command-line tool for provisioning Debian 13 (Trixie) VPS with LAMP s
 ## Requirements
 
 **For running svp (after installation):**
-- Debian 13 (Trixie) VPS
+- **Debian**: Version 12 (Bookworm) or 13 (Trixie)
+- **Ubuntu**: 20.04 LTS, 22.04 LTS, or 24.04 LTS (recommended)
 - Root access
+
+**Note:** The tool automatically detects your OS and version, then configures appropriate package repositories. If PHP packages aren't available for your specific version yet, it will automatically use packages from the nearest stable release which are fully compatible.
 
 **For building from source (development only):**
 - Go 1.21+ (will be installed automatically by install.sh if not present)
@@ -439,6 +442,28 @@ This will:
 
 **Use case:** Testing/development where you need to maintain the same database credentials across reprovisioning
 
+### Example 11: Ubuntu Server Setup
+
+```bash
+# Works on Ubuntu 22.04 LTS, 24.04 LTS, etc.
+sudo svp -mode setup -cms drupal \
+  -domain myubuntu-site.com \
+  -le-email admin@myubuntu-site.com
+```
+
+The tool automatically:
+- Detects Ubuntu OS and version
+- Configures appropriate Ubuntu PHP repositories
+- Falls back to nearest LTS if needed
+- Everything else works identically to Debian
+
+**Output example:**
+```
+[CREATE] Detected Ubuntu jammy
+[!] Ubuntu mantic not yet supported by Sury, using jammy repository
+[✓] Sury PHP repository added
+```
+
 ## CMS-Specific Information
 
 ### Drupal
@@ -638,9 +663,40 @@ When using Let's Encrypt SSL certificates (`-le-email` flag), your domain **must
 10. **File permissions** are set appropriately (admin:www-data)
 11. **Per-site isolation** via separate PHP-FPM pools
 
+## Supported Operating Systems
+
+This tool works on both Debian and Ubuntu:
+
+### Debian Support
+- **Debian 12 (Bookworm)** - Fully supported ✅
+- **Debian 13 (Trixie)** - Fully supported ✅  
+- **Debian 11 (Bullseye)** - Supported ✅
+- **Debian Testing/Unstable** - Automatically falls back to Debian 12 packages
+
+### Ubuntu Support
+- **Ubuntu 24.04 LTS (Noble)** - Fully supported ✅
+- **Ubuntu 22.04 LTS (Jammy)** - Fully supported ✅
+- **Ubuntu 20.04 LTS (Focal)** - Fully supported ✅
+- **Ubuntu 18.04 LTS (Bionic)** - Supported ✅
+- **Ubuntu interim releases** - Automatically falls back to nearest LTS
+
+### Automatic Version Detection
+
+The tool automatically:
+1. Detects your OS (Debian or Ubuntu)
+2. Identifies your version codename
+3. Maps unsupported versions to the nearest stable release
+4. Configures PHP repositories accordingly
+
+For example:
+- Debian 13 (Trixie) → Uses Debian 12 (Bookworm) PHP packages
+- Ubuntu 23.10 (Mantic) → Uses Ubuntu 22.04 LTS (Jammy) PHP packages
+
+This ensures compatibility even on cutting-edge or unsupported releases.
+
 ## Adaptability to Other Distributions
 
-While this tool is designed for Debian 13, it can be adapted for other distributions by modifying:
+While this tool is optimized for Debian and Ubuntu, it can be adapted for other distributions by modifying:
 
 1. **Package names** - `pkg/system/packages.go`
 2. **Service names** - `pkg/system/services.go`
