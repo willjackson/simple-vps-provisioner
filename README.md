@@ -36,12 +36,12 @@ curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/
 
 **Drupal:**
 ```bash
-sudo svp setup --cms drupal --domain example.com --le-email admin@example.com
+sudo svp setup example.com --cms drupal --le-email admin@example.com
 ```
 
 **WordPress:**
 ```bash
-sudo svp setup --cms wordpress --domain example.com --le-email admin@example.com
+sudo svp setup example.com --cms wordpress --le-email admin@example.com
 ```
 
 That's it! Visit `https://example.com` 🎉
@@ -60,9 +60,8 @@ That's it! Visit `https://example.com` 🎉
 ### Deploy from Git Repository
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/yourorg/yoursite.git \
   --le-email admin@example.com
 ```
@@ -70,9 +69,8 @@ sudo svp setup \
 ### Multiple Environments
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --extra-domains "staging.example.com,dev.example.com" \
   --le-email admin@example.com
 ```
@@ -80,9 +78,8 @@ sudo svp setup \
 ### Import Existing Database
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --db /path/to/backup.sql.gz \
   --le-email admin@example.com
 ```
@@ -90,7 +87,7 @@ sudo svp setup \
 ### Update PHP Version
 
 ```bash
-sudo svp php-update --domain example.com --php-version 8.4
+sudo svp php-update example.com --php-version 8.4
 ```
 
 ---
@@ -210,17 +207,17 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ### Fresh Drupal Site
 ```bash
-sudo svp setup --cms drupal --domain mysite.com --le-email admin@mysite.com
+sudo svp setup mysite.com --cms drupal --le-email admin@mysite.com
 ```
 
 ### WordPress from Git
 ```bash
-sudo svp setup --cms wordpress --domain blog.com --git-repo https://github.com/me/blog.git --le-email admin@blog.com
+sudo svp setup blog.com --cms wordpress --git-repo https://github.com/me/blog.git --le-email admin@blog.com
 ```
 
 ### Staging + Production
 ```bash
-sudo svp setup --cms drupal --domain myapp.com --extra-domains "staging.myapp.com" --le-email dev@myapp.com
+sudo svp setup myapp.com --cms drupal --extra-domains "staging.myapp.com" --le-email dev@myapp.com
 ```
 
 [View more examples →](https://willjackson.github.io/simple-vps-provisioner/examples)

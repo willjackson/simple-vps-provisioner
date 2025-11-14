@@ -29,10 +29,10 @@ With a single command, svp provisions your entire server stack:
 curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh | sudo bash
 
 # Provision a Drupal site
-sudo svp setup --cms drupal --domain example.com --le-email admin@example.com
+sudo svp setup example.com --cms drupal --le-email admin@example.com
 
 # Provision a WordPress site
-sudo svp setup --cms wordpress --domain myblog.com --le-email admin@myblog.com
+sudo svp setup myblog.com --cms wordpress --le-email admin@myblog.com
 ```
 
 That's it! Your site is ready at `https://example.com`
@@ -77,15 +77,15 @@ The tool automatically detects your OS and configures packages accordingly.
 Perfect for starting new Drupal projects with best practices built-in.
 
 ```bash
-sudo svp setup --cms drupal --domain mysite.com --le-email admin@mysite.com
+sudo svp setup mysite.com --cms drupal --le-email admin@mysite.com
 ```
 
 ### Deploy Existing Site
 Clone and configure an existing Drupal or WordPress site from Git.
 
 ```bash
-sudo svp setup --cms drupal \
-  --domain mysite.com \
+sudo svp setup mysite.com \
+  --cms drupal \
   --git-repo https://github.com/myorg/mysite.git \
   --git-branch production \
   --le-email admin@mysite.com
@@ -95,8 +95,8 @@ sudo svp setup --cms drupal \
 Set up production, staging, and development environments on one server.
 
 ```bash
-sudo svp setup --cms drupal \
-  --domain mysite.com \
+sudo svp setup mysite.com \
+  --cms drupal \
   --extra-domains "staging.mysite.com,dev.mysite.com" \
   --le-email admin@mysite.com
 ```
@@ -105,8 +105,8 @@ sudo svp setup --cms drupal \
 Import an existing WordPress database during setup.
 
 ```bash
-sudo svp setup --cms wordpress \
-  --domain myblog.com \
+sudo svp setup myblog.com \
+  --cms wordpress \
   --db /path/to/backup.sql.gz \
   --le-email admin@myblog.com
 ```

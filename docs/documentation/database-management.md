@@ -94,9 +94,8 @@ sudo -u admin wp db cli
 Import database during provisioning:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --db /path/to/backup.sql.gz \
   --le-email admin@example.com
@@ -384,7 +383,7 @@ Drop and recreate database:
 
 ```bash
 # Reprovision with fresh database
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 
 # When prompted about existing directory:
 Delete and reprovision? [y/N]: y
@@ -400,7 +399,7 @@ Creates:
 Reprovision but reuse database:
 
 ```bash
-sudo svp setup --cms drupal --domain example.com --keep-existing-db
+sudo svp setup example.com --cms drupal --keep-existing-db
 ```
 
 This:

@@ -68,18 +68,16 @@ DNS propagation typically takes 5-30 minutes.
 For a fresh Drupal installation:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --le-email admin@example.com
 ```
 
 For WordPress:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms wordpress \
-  --domain example.com \
   --le-email admin@example.com
 ```
 
@@ -109,15 +107,14 @@ Once complete, you'll see a summary with:
 ### Choose PHP Version
 
 ```bash
-sudo svp setup --cms drupal --domain example.com --php-version 8.4
+sudo svp setup example.com --cms drupal --php-version 8.4
 ```
 
 ### Deploy from Git
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --git-branch production \
   --le-email admin@example.com
@@ -126,9 +123,8 @@ sudo svp setup \
 ### Multiple Domains
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --extra-domains "staging.example.com,dev.example.com" \
   --le-email admin@example.com
 ```
@@ -136,9 +132,8 @@ sudo svp setup \
 ### Import Existing Database
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --db /path/to/backup.sql.gz \
   --le-email admin@example.com
 ```
@@ -146,7 +141,7 @@ sudo svp setup \
 ### HTTP Only (No SSL)
 
 ```bash
-sudo svp setup --cms drupal --domain example.com --ssl=false
+sudo svp setup example.com --cms drupal --ssl=false
 ```
 
 ## Understanding the Output

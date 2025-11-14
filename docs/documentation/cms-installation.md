@@ -14,9 +14,8 @@ Guide to installing and configuring Drupal and WordPress with svp.
 Install the latest Drupal with default settings:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --le-email admin@example.com
 ```
 
@@ -79,9 +78,8 @@ drush-example.com cex
 Deploy from a Git repository:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --git-branch main \
   --le-email admin@example.com
@@ -97,9 +95,8 @@ sudo svp setup \
 Restore from existing database dump:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --db /path/to/backup.sql.gz \
   --le-email admin@example.com
@@ -147,9 +144,8 @@ drush-example.com updb
 Install latest WordPress:
 
 ```bash
-sudo svp setup \
+sudo svp setup myblog.com \
   --cms wordpress \
-  --domain myblog.com \
   --le-email admin@myblog.com
 ```
 
@@ -198,9 +194,8 @@ sudo -u admin wp user create bob bob@example.com --role=editor
 Deploy from Git repository:
 
 ```bash
-sudo svp setup \
+sudo svp setup myblog.com \
   --cms wordpress \
-  --domain myblog.com \
   --git-repo https://github.com/myorg/wp-site.git \
   --le-email admin@myblog.com
 ```
@@ -222,9 +217,8 @@ wp-site/
 Restore existing WordPress database:
 
 ```bash
-sudo svp setup \
+sudo svp setup myblog.com \
   --cms wordpress \
-  --domain myblog.com \
   --db /path/to/wp-backup.sql.gz \
   --le-email admin@myblog.com
 ```

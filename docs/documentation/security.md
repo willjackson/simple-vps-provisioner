@@ -596,7 +596,7 @@ Should only show: 22 (SSH), 80 (HTTP), 443 (HTTPS)
 
 5. **Reprovision if needed:**
    ```bash
-   sudo svp setup --cms drupal --domain example.com
+   sudo svp setup example.com --cms drupal
    ```
 
 6. **Change all passwords:**

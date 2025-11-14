@@ -78,7 +78,8 @@ func showGeneralHelp() {
 	fmt.Println("  --debug       Enable debug mode")
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  svp setup --cms drupal --domain example.com --le-email admin@example.com")
+	fmt.Println("  svp setup example.com --cms drupal --le-email admin@example.com")
+	fmt.Println("  svp php-update example.com --php-version 8.4")
 	fmt.Println("  svp verify")
 	fmt.Println("  svp update")
 	fmt.Println()
@@ -91,12 +92,12 @@ func showGeneralHelp() {
 
 func setupCommand() {
 	cfg := &types.Config{Mode: "setup"}
+
 	fs := flag.NewFlagSet("setup", flag.ExitOnError)
 
-	// Setup-specific flags
+	// Setup-specific flags (domain is now positional, not a flag)
 	fs.StringVar(&cfg.CMS, "cms", "drupal", "CMS to install: drupal or wordpress")
 	fs.StringVar(&cfg.PHPVersion, "php-version", "8.4", "PHP version to install")
-	fs.StringVar(&cfg.PrimaryDomain, "domain", "", "Primary domain name (required)")
 	fs.StringVar(&cfg.ExtraDomains, "extra-domains", "", "Extra domains (comma-separated)")
 	fs.StringVar(&cfg.LEEmail, "le-email", "", "Let's Encrypt email address for SSL")
 	fs.StringVar(&cfg.Webroot, "webroot", "/var/www", "Parent directory for sites")
@@ -115,14 +116,14 @@ func setupCommand() {
 	fs.Usage = func() {
 		fmt.Printf("Simple VPS Provisioner (svp) v%s - Setup Command\n\n", version)
 		fmt.Println("Usage:")
-		fmt.Println("  svp setup [options]")
+		fmt.Println("  svp setup DOMAIN [options]")
 		fmt.Println()
 		fmt.Println("Description:")
 		fmt.Println("  Provision a fresh VPS with complete LAMP stack and CMS installation.")
 		fmt.Println()
-		fmt.Println("Required Flags:")
-		fmt.Println("  --domain string")
-		fmt.Println("        Primary domain name")
+		fmt.Println("Arguments:")
+		fmt.Println("  DOMAIN")
+		fmt.Println("        Primary domain name (required)")
 		fmt.Println()
 		fmt.Println("Common Flags:")
 		fmt.Println("  --cms string")
@@ -136,7 +137,7 @@ func setupCommand() {
 		fmt.Println("  --git-branch string")
 		fmt.Println("        Git branch to checkout (uses repository default if not specified)")
 		fmt.Println()
-		fmt.Println("Additional Flags:")
+		fmt.Println("Optional Flags:")
 		fmt.Println("  --extra-domains string")
 		fmt.Println("        Additional domains, comma-separated")
 		fmt.Println("  --db string")
@@ -162,42 +163,44 @@ func setupCommand() {
 		fmt.Println()
 		fmt.Println("Examples:")
 		fmt.Println("  # Fresh Drupal site with SSL:")
-		fmt.Println("  svp setup --cms drupal --domain example.com --le-email admin@example.com")
+		fmt.Println("  svp setup example.com --cms drupal --le-email admin@example.com")
 		fmt.Println()
 		fmt.Println("  # WordPress without SSL:")
-		fmt.Println("  svp setup --cms wordpress --domain example.com --ssl=false")
+		fmt.Println("  svp setup example.com --cms wordpress --ssl=false")
 		fmt.Println()
 		fmt.Println("  # Deploy from Git with specific PHP version:")
-		fmt.Println("  svp setup --cms drupal --domain example.com \\")
+		fmt.Println("  svp setup example.com --cms drupal \\")
 		fmt.Println("    --git-repo https://github.com/org/repo.git \\")
 		fmt.Println("    --php-version 8.4 --le-email admin@example.com")
 		fmt.Println()
 		fmt.Println("  # Import existing database:")
-		fmt.Println("  svp setup --cms drupal --domain example.com \\")
+		fmt.Println("  svp setup example.com --cms drupal \\")
 		fmt.Println("    --db /path/to/backup.sql.gz --le-email admin@example.com")
 		fmt.Println()
 		fmt.Println("  # Multiple domains:")
-		fmt.Println("  svp setup --cms drupal --domain example.com \\")
+		fmt.Println("  svp setup example.com --cms drupal \\")
 		fmt.Println("    --extra-domains \"staging.example.com,dev.example.com\" \\")
 		fmt.Println("    --le-email admin@example.com")
 		fmt.Println()
 		fmt.Printf("Documentation: %s\n", documentationURL)
 	}
 
-	fs.Parse(os.Args[2:])
+	// Check if help is requested or domain is missing
+	if len(os.Args) < 3 || os.Args[2] == "--help" || os.Args[2] == "-help" {
+		fs.Usage()
+		os.Exit(0)
+	}
+
+	// Parse domain from positional argument
+	cfg.PrimaryDomain = os.Args[2]
+
+	// Parse flags from remaining arguments (skip command and domain)
+	fs.Parse(os.Args[3:])
 
 	// Enable debug mode if requested
 	if cfg.Debug {
 		os.Setenv("DEBUG", "1")
 		fmt.Println("DEBUG MODE ENABLED")
-	}
-
-	// Validate required parameters
-	if cfg.PrimaryDomain == "" {
-		utils.Err("Primary domain is required for setup")
-		fmt.Println("\nUsage: svp setup --domain example.com [options]")
-		fmt.Println("Run 'svp setup --help' for more information")
-		os.Exit(1)
 	}
 
 	// Validate CMS type
@@ -322,21 +325,22 @@ func phpUpdateCommand() {
 	cfg := &types.Config{Mode: "php-update"}
 	fs := flag.NewFlagSet("php-update", flag.ExitOnError)
 
-	fs.StringVar(&cfg.PrimaryDomain, "domain", "", "Domain to update (required)")
 	fs.StringVar(&cfg.PHPVersion, "php-version", "", "New PHP version (required)")
 	fs.BoolVar(&cfg.Debug, "debug", false, "Enable debug mode")
 
 	fs.Usage = func() {
 		fmt.Printf("Simple VPS Provisioner (svp) v%s - PHP Update Command\n\n", version)
 		fmt.Println("Usage:")
-		fmt.Println("  svp php-update --domain DOMAIN --php-version VERSION")
+		fmt.Println("  svp php-update DOMAIN --php-version VERSION")
 		fmt.Println()
 		fmt.Println("Description:")
 		fmt.Println("  Update the PHP version for a specific domain.")
 		fmt.Println()
+		fmt.Println("Arguments:")
+		fmt.Println("  DOMAIN")
+		fmt.Println("        Domain to update (required)")
+		fmt.Println()
 		fmt.Println("Required Flags:")
-		fmt.Println("  --domain string")
-		fmt.Println("        Domain to update")
 		fmt.Println("  --php-version string")
 		fmt.Println("        New PHP version (8.1, 8.2, 8.3, or 8.4)")
 		fmt.Println()
@@ -354,15 +358,25 @@ func phpUpdateCommand() {
 		fmt.Println()
 		fmt.Println("Examples:")
 		fmt.Println("  # Update to PHP 8.4:")
-		fmt.Println("  svp php-update --domain example.com --php-version 8.4")
+		fmt.Println("  svp php-update example.com --php-version 8.4")
 		fmt.Println()
 		fmt.Println("  # Update to PHP 8.3:")
-		fmt.Println("  svp php-update --domain mysite.com --php-version 8.3")
+		fmt.Println("  svp php-update mysite.com --php-version 8.3")
 		fmt.Println()
 		fmt.Printf("Documentation: %s\n", documentationURL)
 	}
 
-	fs.Parse(os.Args[2:])
+	// Check if help is requested or domain is missing
+	if len(os.Args) < 3 || os.Args[2] == "--help" || os.Args[2] == "-help" {
+		fs.Usage()
+		os.Exit(0)
+	}
+
+	// Parse domain from positional argument
+	cfg.PrimaryDomain = os.Args[2]
+
+	// Parse flags from remaining arguments (skip command and domain)
+	fs.Parse(os.Args[3:])
 
 	// Enable debug mode if requested
 	if cfg.Debug {
@@ -371,16 +385,9 @@ func phpUpdateCommand() {
 	}
 
 	// Validate required parameters
-	if cfg.PrimaryDomain == "" {
-		utils.Err("Domain is required for php-update")
-		fmt.Println("\nUsage: svp php-update --domain example.com --php-version 8.4")
-		fmt.Println("Run 'svp php-update --help' for more information")
-		os.Exit(1)
-	}
-
 	if cfg.PHPVersion == "" {
 		utils.Err("PHP version is required for php-update")
-		fmt.Println("\nUsage: svp php-update --domain example.com --php-version 8.4")
+		fmt.Println("\nUsage: svp php-update DOMAIN --php-version VERSION")
 		fmt.Println("Run 'svp php-update --help' for more information")
 		os.Exit(1)
 	}

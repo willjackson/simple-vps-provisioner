@@ -77,9 +77,8 @@ https://myblog.com/wp-admin/install.php
 Deploy an existing Drupal site from GitHub:
 
 ```bash
-sudo svp setup \
+sudo svp setup production.mysite.com \
   --cms drupal \
-  --domain production.mysite.com \
   --git-repo git@github.com:mycompany/mysite.git \
   --git-branch main \
   --le-email devops@mycompany.com
@@ -108,9 +107,8 @@ mysite/
 Migrate a site with an existing database:
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --git-repo git@github.com:mycompany/mysite.git \
   --db /home/admin/mysite-backup-2024-01-15.sql.gz \
   --le-email admin@mysite.com
@@ -139,9 +137,8 @@ rsync -avz user@old-server:/var/www/mysite/web/sites/default/files/ \
 Production, staging, and development on one server:
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --extra-domains "staging.mysite.com,dev.mysite.com" \
   --git-repo git@github.com:mycompany/mysite.git \
   --le-email devops@mycompany.com
@@ -196,9 +193,8 @@ git push origin main
 #### Step 3: Deploy to VPS
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --git-repo https://github.com/mycompany/mysite.git \
   --le-email admin@mysite.com
 ```
@@ -229,9 +225,8 @@ rsync -avz ~/Sites/mysite/web/sites/default/files/ \
 Test a feature branch on a dedicated environment:
 
 ```bash
-sudo svp setup \
+sudo svp setup feature-xyz.mysite.com \
   --cms drupal \
-  --domain feature-xyz.mysite.com \
   --git-repo git@github.com:mycompany/mysite.git \
   --git-branch feature/xyz \
   --le-email admin@mysite.com
@@ -285,9 +280,8 @@ scp mysite-db.sql.gz admin@vps-ip:/home/admin/
 
 ```bash
 # On VPS
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --db /home/admin/mysite-db.sql.gz \
   --le-email admin@mysite.com
 ```
@@ -317,9 +311,8 @@ Using rsync for minimal downtime:
 #### Step 1: Provision New Server
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --ssl=false
 ```
 
@@ -358,9 +351,8 @@ rsync -avz --delete \
 #### Step 5: Enable SSL
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --le-email admin@mysite.com
 ```
 
@@ -377,9 +369,8 @@ Update DNS to point to new server.
 Use PHP 8.4 for latest features:
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --php-version 8.4 \
   --le-email admin@mysite.com
 ```
@@ -389,8 +380,7 @@ sudo svp setup \
 Upgrade existing site:
 
 ```bash
-sudo svp php-update \
-  --domain mysite.com \
+sudo svp php-update mysite.com \
   --php-version 8.4
 ```
 
@@ -410,9 +400,8 @@ monorepo/
 ```
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --git-repo https://github.com/mycompany/monorepo.git \
   --drupal-root "backend" \
   --le-email admin@mysite.com
@@ -425,9 +414,8 @@ sudo svp setup \
 For internal tools without SSL:
 
 ```bash
-sudo svp setup \
+sudo svp setup internal.mycompany.local \
   --cms drupal \
-  --domain internal.mycompany.local \
   --ssl=false \
   --firewall=false
 ```
@@ -439,9 +427,8 @@ sudo svp setup \
 Non-standard docroot:
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --docroot "public_html" \
   --le-email admin@mysite.com
 ```
@@ -453,18 +440,16 @@ sudo svp setup \
 ### Basic WordPress
 
 ```bash
-sudo svp setup \
+sudo svp setup myblog.com \
   --cms wordpress \
-  --domain myblog.com \
   --le-email admin@myblog.com
 ```
 
 ### WordPress from Git
 
 ```bash
-sudo svp setup \
+sudo svp setup myblog.com \
   --cms wordpress \
-  --domain myblog.com \
   --git-repo https://github.com/mycompany/wp-site.git \
   --le-email admin@myblog.com
 ```
@@ -472,9 +457,8 @@ sudo svp setup \
 ### WordPress with Database Import
 
 ```bash
-sudo svp setup \
+sudo svp setup myblog.com \
   --cms wordpress \
-  --domain myblog.com \
   --db /home/admin/wp-backup.sql.gz \
   --le-email admin@myblog.com
 ```
@@ -499,7 +483,7 @@ dig +short mysite.com
 123.45.67.89
 
 # Test without SSL first
-sudo svp setup --cms drupal --domain mysite.com --ssl=false
+sudo svp setup mysite.com --cms drupal --ssl=false
 
 # Add SSL later
 sudo certbot --nginx -d mysite.com --non-interactive --agree-tos --email admin@mysite.com
@@ -512,7 +496,7 @@ sudo certbot --nginx -d mysite.com --non-interactive --agree-tos --email admin@m
 Clean slate with new credentials:
 
 ```bash
-sudo svp setup --cms drupal --domain mysite.com
+sudo svp setup mysite.com --cms drupal
 ```
 
 When prompted:
@@ -533,7 +517,7 @@ Result:
 Keep credentials, clear tables:
 
 ```bash
-sudo svp setup --cms drupal --domain mysite.com --keep-existing-db
+sudo svp setup mysite.com --cms drupal --keep-existing-db
 ```
 
 Result:
@@ -568,9 +552,8 @@ sudo certbot --nginx -d example.com
 # - Team collaboration
 # - CI/CD integration
 
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo git@github.com:company/site.git \
   --le-email admin@example.com
 ```
@@ -579,9 +562,8 @@ sudo svp setup \
 
 ```bash
 # Never mix production and development
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --extra-domains "staging.example.com"
 ```
 

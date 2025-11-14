@@ -146,9 +146,8 @@ Wait 5-30 minutes for DNS propagation.
 ### 2. Run Setup Command
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --le-email admin@example.com
 ```
 
@@ -183,7 +182,7 @@ svp respects these environment variables:
 
 Enable debug output:
 ```bash
-DEBUG=1 svp --mode setup --cms drupal --domain example.com
+DEBUG=1 svp --mode setup example.com --cms drupal
 ```
 
 Shows detailed command execution and troubleshooting information.

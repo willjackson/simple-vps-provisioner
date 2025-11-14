@@ -30,7 +30,7 @@ svp uses positional commands instead of flags.
 Perform full VPS provisioning.
 
 ```bash
-svp setup [options]
+svp setup DOMAIN [options]
 ```
 
 **What it does:**
@@ -44,7 +44,7 @@ svp setup [options]
 
 **Example:**
 ```bash
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 ```
 
 ### Verify Command
@@ -124,7 +124,7 @@ Update now? [y/N]: y
 Update PHP version for a domain.
 
 ```bash
-svp php-update --domain DOMAIN --php-version VERSION
+svp php-update DOMAIN --php-version VERSION
 ```
 
 **What it does:**
@@ -137,7 +137,7 @@ svp php-update --domain DOMAIN --php-version VERSION
 
 **Example:**
 ```bash
-sudo svp php-update --domain example.com --php-version 8.4
+sudo svp php-update example.com --php-version 8.4
 ```
 
 ---
@@ -162,7 +162,7 @@ Simple VPS Provisioner (svp) version 1.0.30
 Enable debug mode for troubleshooting.
 
 ```bash
-svp --debug setup --cms drupal --domain example.com
+svp --debug setup example.com --cms drupal
 ```
 
 Enables verbose output showing all command execution.
@@ -184,27 +184,29 @@ Choose CMS to install.
 
 ```bash
 # Drupal
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 
 # WordPress
-sudo svp setup --cms wordpress --domain myblog.com
+sudo svp setup myblog.com --cms wordpress
 ```
 
 ---
 
 ## Domain Configuration
 
-### --domain
+### DOMAIN (positional argument)
 
-Primary domain name (required for setup).
+Primary domain name (required for setup and php-update commands).
 
+**Usage:**
 ```bash
---domain example.com
+svp setup DOMAIN [options]
+svp php-update DOMAIN [options]
 ```
 
 **Example:**
 ```bash
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 ```
 
 ### --extra-domains
@@ -224,8 +226,8 @@ Each domain gets:
 **Example:**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --extra-domains "staging.example.com,dev.example.com"
 ```
 
@@ -251,7 +253,7 @@ PHP version to install.
 
 **Example:**
 ```bash
-sudo svp setup --cms drupal --domain example.com --php-version 8.4
+sudo svp setup example.com --cms drupal --php-version 8.4
 ```
 
 **Available versions:**
@@ -278,15 +280,15 @@ Enable or disable SSL/HTTPS.
 **Example (with SSL):**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --ssl=true \
   --le-email admin@example.com
 ```
 
 **Example (HTTP only):**
 ```bash
-sudo svp setup --cms drupal --domain example.com --ssl=false
+sudo svp setup example.com --cms drupal --ssl=false
 ```
 
 ### --le-email
@@ -308,8 +310,8 @@ Let's Encrypt email for SSL certificates.
 **Example:**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --le-email admin@example.com
 ```
 
@@ -324,7 +326,7 @@ Enable or disable UFW firewall.
 
 **Example:**
 ```bash
-sudo svp setup --cms drupal --domain example.com --firewall=true
+sudo svp setup example.com --cms drupal --firewall=true
 ```
 
 ---
@@ -343,8 +345,8 @@ Git repository URL to clone.
 **Example:**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git
 ```
 
@@ -363,8 +365,8 @@ Git branch to checkout (optional).
 **Example:**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --git-branch production
 ```
@@ -386,8 +388,8 @@ Drupal root directory (relative to repo).
 **Example:**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/monorepo.git \
   --drupal-root "backend"
 ```
@@ -405,8 +407,8 @@ Custom document root path.
 **Example:**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --docroot "public_html"
 ```
@@ -426,12 +428,12 @@ Database engine to use.
 
 **Example (with database):**
 ```bash
-sudo svp setup --cms drupal --domain example.com --db-engine mariadb
+sudo svp setup example.com --cms drupal --db-engine mariadb
 ```
 
 **Example (without database):**
 ```bash
-sudo svp setup --cms drupal --domain example.com --db-engine none
+sudo svp setup example.com --cms drupal --db-engine none
 ```
 
 ### --db
@@ -455,8 +457,8 @@ Path to database file for import.
 **Example:**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --db /home/admin/backup.sql.gz
 ```
 
@@ -481,12 +483,12 @@ Keep existing database when reprovisioning.
 
 **Example (fresh database):**
 ```bash
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 ```
 
 **Example (keep credentials):**
 ```bash
-sudo svp setup --cms drupal --domain example.com --keep-existing-db
+sudo svp setup example.com --cms drupal --keep-existing-db
 ```
 
 ---
@@ -510,8 +512,8 @@ Sites are created as:
 **Example:**
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --webroot /srv/www
 ```
 
@@ -531,7 +533,7 @@ Create swap space.
 
 **Example:**
 ```bash
-sudo svp setup --cms drupal --domain example.com --create-swap yes
+sudo svp setup example.com --cms drupal --create-swap yes
 ```
 
 ---
@@ -541,15 +543,15 @@ sudo svp setup --cms drupal --domain example.com --create-swap yes
 ### Minimal Drupal (HTTP only)
 
 ```bash
-sudo svp setup --cms drupal --domain example.com --ssl=false
+sudo svp setup example.com --cms drupal --ssl=false
 ```
 
 ### Production Drupal with SSL
 
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --le-email admin@example.com
 ```
 
@@ -557,8 +559,8 @@ sudo svp setup \
 
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --php-version 8.4 \
   --git-repo https://github.com/myorg/mysite.git \
   --git-branch production \
@@ -569,8 +571,8 @@ sudo svp setup \
 
 ```bash
 sudo svp setup \
+  myblog.com \
   --cms wordpress \
-  --domain myblog.com \
   --db /home/admin/wp-backup.sql.gz \
   --le-email admin@myblog.com
 ```
@@ -579,8 +581,8 @@ sudo svp setup \
 
 ```bash
 sudo svp setup \
+  mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --extra-domains "staging.mysite.com,dev.mysite.com" \
   --git-repo https://github.com/myorg/mysite.git \
   --le-email admin@mysite.com
@@ -589,13 +591,13 @@ sudo svp setup \
 ### Reprovision with Fresh Database
 
 ```bash
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 ```
 
 ### Reprovision Keeping Credentials
 
 ```bash
-sudo svp setup --cms drupal --domain example.com --keep-existing-db
+sudo svp setup example.com --cms drupal --keep-existing-db
 ```
 
 ---
@@ -617,8 +619,8 @@ All flags can be combined:
 
 ```bash
 sudo svp setup \
+  example.com \
   --cms drupal \
-  --domain example.com \
   --php-version 8.4 \
   --webroot /srv/www \
   --git-repo https://github.com/myorg/mysite.git \

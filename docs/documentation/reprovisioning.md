@@ -38,7 +38,7 @@ Reprovisioning allows you to:
 Running svp on an existing domain creates a **completely fresh** installation:
 
 ```bash
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 ```
 
 **Prompt appears:**
@@ -69,7 +69,7 @@ Delete and reprovision? [y/N]:
 Use `--keep-existing-db` flag to reuse database credentials:
 
 ```bash
-sudo svp setup --cms drupal --domain example.com --keep-existing-db
+sudo svp setup example.com --cms drupal --keep-existing-db
 ```
 
 **What happens:**
@@ -94,7 +94,7 @@ sudo svp setup --cms drupal --domain example.com --keep-existing-db
 
 ```bash
 # Complete clean slate
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 
 # When prompted
 Delete and reprovision? [y/N]: y
@@ -109,7 +109,7 @@ Delete and reprovision? [y/N]: y
 
 ```bash
 # Keep credentials for testing
-sudo svp setup --cms drupal --domain dev.example.com --keep-existing-db
+sudo svp setup dev.example.com --cms drupal --keep-existing-db
 ```
 
 **Perfect for:**
@@ -124,7 +124,7 @@ Update only specific components:
 
 **Change PHP version:**
 ```bash
-sudo svp php-update --domain example.com --php-version 8.4
+sudo svp php-update example.com --php-version 8.4
 ```
 
 **Update SSL certificate:**
@@ -172,9 +172,8 @@ Before reprovisioning, backup:
 ### Import Database During Reprovision
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --db /path/to/backup.sql.gz
 ```
 
@@ -282,9 +281,8 @@ sudo svp setup --cms drupal --domain example.com
 
 ```bash
 # Reprovision with SSL enabled
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --le-email admin@example.com \
   --db /path/to/backup.sql.gz
 ```
@@ -293,7 +291,7 @@ sudo svp setup \
 
 ```bash
 # Fresh start
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 
 # Import known good database
 zcat /path/to/backup.sql.gz | drush-example.com sql-cli
@@ -306,7 +304,7 @@ rsync -avz /backup/files/ /var/www/example.com/web/sites/default/files/
 
 ```bash
 # Quick reset keeping credentials
-sudo svp setup --cms drupal --domain dev.example.com --keep-existing-db
+sudo svp setup dev.example.com --cms drupal --keep-existing-db
 
 # Answer yes to prompt
 Delete and reprovision? [y/N]: y
@@ -336,7 +334,7 @@ drush-$PROD_DOMAIN sql-dump --gzip > $BACKUP_DIR/prod-export.sql.gz
 
 # 2. Reprovision dev (keeps credentials)
 echo "Reprovisioning dev environment..."
-sudo svp setup --cms drupal --domain $DOMAIN --keep-existing-db <<< "y"
+sudo svp setup $DOMAIN --cms drupal --keep-existing-db <<< "y"
 
 # 3. Import production database
 echo "Importing production database..."
@@ -424,7 +422,7 @@ Never reprovision without backing up:
 Test reprovision process on staging before production:
 ```bash
 # Staging test
-sudo svp setup --cms drupal --domain staging.example.com
+sudo svp setup staging.example.com --cms drupal
 
 # If successful, proceed to production
 ```
@@ -433,7 +431,7 @@ sudo svp setup --cms drupal --domain staging.example.com
 
 For dev environments that reset frequently:
 ```bash
-sudo svp setup --cms drupal --domain dev.example.com --keep-existing-db
+sudo svp setup dev.example.com --cms drupal --keep-existing-db
 ```
 
 ### 4. Document Changes

@@ -27,9 +27,8 @@ svp supports hosting multiple domains on one server. Each domain gets:
 Provision multiple domains in one command:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --extra-domains "staging.example.com,dev.example.com" \
   --le-email admin@example.com
 ```
@@ -58,13 +57,13 @@ Run svp multiple times for different domains:
 
 ```bash
 # First site
-sudo svp setup --cms drupal --domain site1.com --le-email admin@site1.com
+sudo svp setup site1.com --cms drupal --le-email admin@site1.com
 
 # Second site
-sudo svp setup --cms drupal --domain site2.com --le-email admin@site2.com
+sudo svp setup site2.com --cms drupal --le-email admin@site2.com
 
 # Third site
-sudo svp setup --cms wordpress --domain blog.com --le-email admin@blog.com
+sudo svp setup blog.com --cms wordpress --le-email admin@blog.com
 ```
 
 **Advantage:** Each site can have:
@@ -82,9 +81,8 @@ sudo svp setup --cms wordpress --domain blog.com --le-email admin@blog.com
 Perfect for development workflow:
 
 ```bash
-sudo svp setup \
+sudo svp setup myapp.com \
   --cms drupal \
-  --domain myapp.com \
   --extra-domains "staging.myapp.com,dev.myapp.com" \
   --git-repo https://github.com/company/myapp.git \
   --le-email devops@company.com
@@ -349,10 +347,10 @@ sudo systemctl reload nginx
 
 ```bash
 # Site 1 with PHP 8.3
-sudo svp setup --cms drupal --domain site1.com --php-version 8.3
+sudo svp setup site1.com --cms drupal --php-version 8.3
 
 # Site 2 with PHP 8.4
-sudo svp setup --cms drupal --domain site2.com --php-version 8.4
+sudo svp setup site2.com --cms drupal --php-version 8.4
 ```
 
 Each site uses its specified PHP-FPM version independently.

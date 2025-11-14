@@ -24,9 +24,8 @@ svp can clone and deploy sites directly from Git repositories, perfect for:
 ### Deploy from Repository
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --le-email admin@example.com
 ```
@@ -40,9 +39,8 @@ sudo svp setup \
 ### Specify Branch
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --git-branch production \
   --le-email admin@example.com
@@ -177,23 +175,20 @@ Different branches per environment:
 
 ```bash
 # Production - main branch
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo git@github.com:myorg/mysite.git \
   --git-branch main
 
 # Staging - develop branch
-sudo svp setup \
+sudo svp setup staging.example.com \
   --cms drupal \
-  --domain staging.example.com \
   --git-repo git@github.com:myorg/mysite.git \
   --git-branch develop
 
 # Development - develop branch (for feature testing)
-sudo svp setup \
+sudo svp setup dev.example.com \
   --cms drupal \
-  --domain dev.example.com \
   --git-repo git@github.com:myorg/mysite.git \
   --git-branch develop
 ```
@@ -272,9 +267,8 @@ monorepo/
 Use `--drupal-root` flag:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/monorepo.git \
   --drupal-root "backend" \
   --le-email admin@example.com
@@ -285,9 +279,8 @@ sudo svp setup \
 Non-standard docroot path:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --docroot "public" \
   --le-email admin@example.com
@@ -356,9 +349,8 @@ sudo svp setup \
 Clone repo and import existing database:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --git-repo https://github.com/myorg/mysite.git \
   --db /path/to/backup.sql.gz \
   --le-email admin@example.com

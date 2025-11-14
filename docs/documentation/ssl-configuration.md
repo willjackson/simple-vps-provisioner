@@ -26,9 +26,8 @@ svp automatically configures SSL/HTTPS using Let's Encrypt certificates. This pr
 SSL is enabled by default when you provide an email address:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --le-email admin@example.com
 ```
 
@@ -59,9 +58,8 @@ dig +short example.com
 ### Enable SSL (Default)
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --ssl=true \
   --le-email admin@example.com
 ```
@@ -71,9 +69,8 @@ sudo svp setup \
 For development or internal use:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --ssl=false
 ```
 
@@ -89,9 +86,8 @@ sudo svp setup \
 When using multiple domains, each gets its own certificate:
 
 ```bash
-sudo svp setup \
+sudo svp setup example.com \
   --cms drupal \
-  --domain example.com \
   --extra-domains "staging.example.com,dev.example.com" \
   --le-email admin@example.com
 ```
@@ -418,9 +414,8 @@ renew_hook = systemctl reload nginx
 For development or testing:
 
 ```bash
-sudo svp setup \
+sudo svp setup dev.example.local \
   --cms drupal \
-  --domain dev.example.local \
   --ssl=false
 ```
 
