@@ -16,8 +16,8 @@ var BasePackages = []string{
 // AddPHPRepoIfNeeded adds the Sury PHP repository if not already configured
 // For Ubuntu: Uses PPA method (add-apt-repository ppa:ondrej/php)
 // For Debian: Uses direct deb line with GPG key
-// For Debian testing/unstable (trixie, sid): Uses native Debian packages instead
-func AddPHPRepoIfNeeded(verifyOnly bool) error {
+// For Debian testing/unstable (trixie, sid): Uses Sury for older PHP versions, native for current
+func AddPHPRepoIfNeeded(phpVersion string, verifyOnly bool) error {
 	// Detect OS distribution first to determine method
 	distroID, err := utils.RunShell("lsb_release -si")
 	if err != nil {
@@ -161,14 +161,25 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 		utils.Log("Detected %s %s", distroID, codename)
 	}
 
-	// For Debian testing/unstable (trixie, sid, forky), use native Debian packages
+	// For Debian testing/unstable (trixie, sid, forky), check if we need Sury
+	// These versions have recent PHP natively, but Sury is needed for older versions
 	if distroLower == "debian" {
-		testingVersions := []string{"trixie", "sid", "forky"}
-		for _, testVer := range testingVersions {
-			if codename == testVer {
-				utils.Log("Debian %s detected - using native Debian PHP packages", codename)
+		testingVersions := map[string]string{
+			"trixie": "8.4", // Trixie has PHP 8.4 natively
+			"sid":    "8.4", // Sid has PHP 8.4 natively
+			"forky":  "8.4", // Forky will have PHP 8.4 or newer
+		}
+		
+		if nativeVersion, isTesting := testingVersions[codename]; isTesting {
+			// Check if requested version matches or exceeds native version
+			if phpVersion >= nativeVersion {
+				utils.Log("Debian %s detected - using native Debian PHP %s", codename, nativeVersion)
 				utils.Verify("Native Debian repositories will be used (Sury not needed)")
 				return nil
+			} else {
+				utils.Log("Debian %s detected - PHP %s requested (native is %s)", codename, phpVersion, nativeVersion)
+				utils.Log("Using Sury repository for PHP %s...", phpVersion)
+				// Fall through to add Sury repo
 			}
 		}
 	}

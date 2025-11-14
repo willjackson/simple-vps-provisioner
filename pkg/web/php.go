@@ -29,7 +29,7 @@ func PHPPackages(version string) []string {
 // InstallPHP installs a specific PHP version with required extensions
 func InstallPHP(version string, verifyOnly bool) error {
 	// Ensure Sury repo is added or native packages are available
-	if err := system.AddPHPRepoIfNeeded(verifyOnly); err != nil {
+	if err := system.AddPHPRepoIfNeeded(version, verifyOnly); err != nil {
 		return err
 	}
 
