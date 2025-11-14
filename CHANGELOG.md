@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING: New command structure** - Commands are now positional arguments instead of flags. Use `svp setup` instead of `svp -mode setup`. Running `svp` with no arguments now shows help instead of attempting setup
+- **Context-sensitive help** - Each command (`setup`, `verify`, `update`, `php-update`) now has its own help text with relevant options only. Use `svp setup -help` to see setup-specific options
+- **Git branch behavior** - The `-git-branch` flag no longer defaults to "main". When not specified, the repository's default branch is used automatically
+- **Simplified help output** - Main help now shows only 2-3 examples with reference to full documentation for complete examples
+
 ### Fixed
 - **CRITICAL: SSL certificate failures no longer break sites** - Completely redesigned SSL certificate obtainment to use two-phase approach: Phase 1 obtains certificate WITHOUT modifying nginx (using `certbot certonly`), Phase 2 configures nginx only if certificate was successfully obtained. This prevents sites from becoming inaccessible when certificate obtainment fails (e.g., rate limits, network issues) because nginx configuration is never modified unless we have a valid certificate
 - **PHP update now preserves SSL configuration** - `php-update` mode now automatically reconfigures SSL/HTTPS after updating Nginx vhost, preventing sites from becoming HTTP-only after PHP version changes

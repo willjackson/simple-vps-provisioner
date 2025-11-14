@@ -338,7 +338,7 @@ sudo tail -f /var/log/nginx/example.com.error.log
 
 Run svp with debug output:
 ```bash
-DEBUG=1 sudo svp -mode setup -cms drupal -domain example.com -le-email admin@example.com
+DEBUG=1 sudo svp setup -cms drupal -domain example.com -le-email admin@example.com
 ```
 
 This shows detailed command execution and can help identify where issues occur.
