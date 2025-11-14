@@ -33,20 +33,22 @@ func InstallPHP(version string, verifyOnly bool) error {
 		return err
 	}
 
-	// Update package cache to ensure we have the latest package information
-	if !verifyOnly {
-		utils.Log("Updating package cache...")
-		if _, err := utils.RunCommand("apt-get", "update", "-y"); err != nil {
-			utils.Warn("Failed to update package cache: %v", err)
-		}
-	}
-
 	packages := PHPPackages(version)
 	var missing []string
 
 	for _, pkg := range packages {
 		if !utils.CheckPackageInstalled(pkg) {
 			missing = append(missing, pkg)
+		}
+	}
+
+	// Only update package cache if we have missing packages to install
+	// This prevents unnecessary update errors when everything is already installed
+	if len(missing) > 0 && !verifyOnly {
+		utils.Log("Updating package cache...")
+		if _, err := utils.RunCommand("apt-get", "update", "-y"); err != nil {
+			utils.Warn("Failed to update package cache: %v", err)
+			// Continue anyway - packages might still be installable
 		}
 	}
 

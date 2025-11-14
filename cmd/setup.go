@@ -25,6 +25,8 @@ func FullSetup(cfg *types.Config) error {
 	type DomainSetupResult struct {
 		Domain          string
 		DomainDir       string
+		DrushAlias      string // Drush alias name (e.g., @example_com)
+		DrushWrapper    string // Drush wrapper command (e.g., drush-example.com)
 		SSLConfigured   bool
 		FreshInstall    bool
 		DBImported      bool
@@ -191,6 +193,13 @@ func FullSetup(cfg *types.Config) error {
 			ConfigImported: false,
 			InstallFailed: false,
 			SettingsSVPAdded: settingsSVPByDomain[domain],
+		}
+
+		// For Drupal sites, calculate Drush alias names
+		if cfg.CMS == "drupal" {
+			// Drush alias replaces dots with underscores
+			result.DrushAlias = "@" + strings.ReplaceAll(domain, ".", "_")
+			result.DrushWrapper = "drush-" + domain
 		}
 
 		// Determine webroot for this domain
@@ -478,10 +487,16 @@ func FullSetup(cfg *types.Config) error {
 		fmt.Println("Next steps:")
 		
 		if cfg.CMS == "drupal" {
+			// Show Drush commands
+			fmt.Printf("\nDrush commands:\n")
+			fmt.Printf("  • Wrapper: %s <command>\n", result.DrushWrapper)
+			fmt.Printf("  • Alias:   drush %s <command>\n", result.DrushAlias)
+			fmt.Println()
+
 			if result.InstallFailed {
 				// Installation failed - give manual instructions
 				fmt.Printf("  • Complete installation manually: %s://%s/install.php\n", protocol, result.Domain)
-				fmt.Printf("  • Or use Drush: drush-%s site:install\n", result.Domain)
+				fmt.Printf("  • Or use Drush: %s site:install\n", result.DrushWrapper)
 			} else {
 				// Successful install or import - provide access links
 				// Get the Drush login link
@@ -517,7 +532,7 @@ func FullSetup(cfg *types.Config) error {
 				if err == nil && loginLink != "" {
 					fmt.Printf("  • Login to admin: %s\n", loginLink)
 				} else {
-					fmt.Printf("  • Login to admin: drush-%s uli\n", result.Domain)
+					fmt.Printf("  • Login to admin: %s uli\n", result.DrushWrapper)
 				}
 				
 				fmt.Printf("  • Visit homepage: %s://%s\n", protocol, result.Domain)

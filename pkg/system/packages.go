@@ -53,11 +53,54 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 	
 	// Check if already configured
 	if distroLower == "ubuntu" {
-		// For Ubuntu, check if PPA is already added
-		output, _ := utils.RunShell("grep -r 'ondrej/php' /etc/apt/sources.list.d/ 2>/dev/null")
-		if strings.TrimSpace(output) != "" {
+		// For Ubuntu, check ALL possible PPA configurations and validate codenames
+		// We need to check multiple locations because old runs might have created different files
+		var needsReconfiguration bool
+		var hasValidConfig bool
+		
+		// Check all sources.list.d files for ondrej/php
+		files, _ := utils.RunShell("grep -l 'ondrej/php' /etc/apt/sources.list.d/*.list 2>/dev/null || true")
+		if strings.TrimSpace(files) != "" {
+			fileList := strings.Split(strings.TrimSpace(files), "\n")
+			
+			for _, file := range fileList {
+				if file == "" {
+					continue
+				}
+				
+				repoContent, _ := utils.RunShell(fmt.Sprintf("cat %s 2>/dev/null", file))
+				lines := strings.Split(repoContent, "\n")
+				
+				for _, line := range lines {
+					if strings.HasPrefix(line, "deb") && strings.Contains(line, "ondrej/php") {
+						parts := strings.Fields(line)
+						if len(parts) >= 4 {
+							currentCodename := parts[3]
+							supportedCodename := getSupportedPPACodename(currentCodename)
+							
+							if supportedCodename != currentCodename {
+								utils.Warn("Found PPA in %s with unsupported codename: %s", file, currentCodename)
+								needsReconfiguration = true
+								// Remove this file
+								_, _ = utils.RunCommand("rm", "-f", file)
+							} else {
+								hasValidConfig = true
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// If we found a valid configuration and no invalid ones, we're good
+		if hasValidConfig && !needsReconfiguration {
 			utils.Verify("Sury PHP PPA already configured")
 			return nil
+		}
+		
+		// If we need reconfiguration, log it
+		if needsReconfiguration {
+			utils.Log("Reconfiguring PPA with correct codename...")
 		}
 	} else {
 		// For Debian, check if repo is already configured
@@ -183,6 +226,11 @@ func addPHPRepoUbuntu() error {
 			utils.Warn("Failed to import GPG key, continuing anyway (may be already present)")
 		}
 	}
+
+	// Clean up any old PPA files that might exist from previous runs
+	// This ensures we don't have conflicting configurations
+	utils.Log("Cleaning up any old PPA configurations...")
+	_, _ = utils.RunShell("rm -f /etc/apt/sources.list.d/*ondrej*php*.list 2>/dev/null || true")
 
 	// Manually create the sources.list.d file with the mapped codename
 	// This is more reliable than add-apt-repository for unsupported versions

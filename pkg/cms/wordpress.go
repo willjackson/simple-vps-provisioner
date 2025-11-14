@@ -27,6 +27,24 @@ func InstallWordPress(domain, webroot, gitRepo, gitBranch string, sitesDir strin
 
 	domainDir := filepath.Join(webroot, domain)
 
+	// Check if directory exists and is not empty
+	if utils.CheckDirExists(domainDir) {
+		entries, err := utils.RunShell(fmt.Sprintf("ls -A %s | wc -l", domainDir))
+		if err == nil && strings.TrimSpace(entries) != "0" {
+			utils.Warn("Directory %s is not empty", domainDir)
+			fmt.Print("Delete and reprovision? [y/N]: ")
+			var response string
+			fmt.Scanln(&response)
+			if strings.ToLower(response) != "y" {
+				return fmt.Errorf("aborted: directory not empty")
+			}
+			utils.Log("Removing existing directory...")
+			if _, err := utils.RunCommand("rm", "-rf", domainDir); err != nil {
+				return fmt.Errorf("failed to remove directory: %v", err)
+			}
+		}
+	}
+
 	// Ensure webroot exists
 	if err := utils.EnsureDir(domainDir); err != nil {
 		return fmt.Errorf("failed to create domain directory: %v", err)
