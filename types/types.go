@@ -50,6 +50,9 @@ type Config struct {
 	// Whether to enable SSL/HTTPS
 	SSLEnable bool
 
+	// SSL action for update-ssl command: enable, disable, renew, check
+	SSLAction string
+
 	// Switch all sites to new PHP version
 	SwitchAll bool
 

@@ -194,7 +194,8 @@ func InstallSomething(verifyOnly bool) error {
 3. **Test on VM**
    ```bash
    multipass shell svp-test
-   sudo ./svp setup --cms drupal --domain test.local --ssl=false
+   # Test without SSL (omit --le-email)
+   sudo ./svp setup --cms drupal --domain test.local
    ```
 
 4. **Verify**

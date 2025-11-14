@@ -151,6 +151,8 @@ sudo svp setup example.com \
   --le-email admin@example.com
 ```
 
+Note: SSL is enabled when you provide `--le-email`. Omit it to set up without SSL initially.
+
 ### 3. Wait for Completion
 
 svp will automatically:
@@ -212,6 +214,7 @@ DOMAIN='example.com'
 PHP_VERSION='8.3'
 WEBROOT='/var/www/example.com/web'
 CREATED='Mon Jan 15 10:30:00 UTC 2024'
+SSL_EMAIL='admin@example.com'  # If SSL enabled
 ```
 
 **Database Credentials** (`/etc/svp/sites/example.com.db.txt`):

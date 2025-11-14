@@ -23,7 +23,7 @@ svp automatically configures SSL/HTTPS using Let's Encrypt certificates. This pr
 
 ### Default Behavior
 
-SSL is enabled by default when you provide an email address:
+**SSL is disabled by default.** To enable SSL, provide an email address with `--le-email`:
 
 ```bash
 sudo svp setup example.com \
@@ -31,7 +31,7 @@ sudo svp setup example.com \
   --le-email admin@example.com
 ```
 
-This will:
+When `--le-email` is provided, this will:
 1. Obtain certificate from Let's Encrypt
 2. Configure Nginx for HTTPS
 3. Set up automatic HTTP → HTTPS redirect
@@ -55,23 +55,23 @@ dig +short example.com
 
 ## SSL Options
 
-### Enable SSL (Default)
+### Enable SSL
+
+To enable SSL, simply provide your email address:
 
 ```bash
 sudo svp setup example.com \
   --cms drupal \
-  --ssl=true \
   --le-email admin@example.com
 ```
 
 ### Disable SSL (HTTP Only)
 
-For development or internal use:
+By default, SSL is disabled. Simply omit the `--le-email` flag:
 
 ```bash
 sudo svp setup example.com \
-  --cms drupal \
-  --ssl=false
+  --cms drupal
 ```
 
 **Use cases:**
@@ -116,6 +116,10 @@ sudo certbot certificates -d example.com
 Certificates auto-renew, but you can force renewal:
 
 ```bash
+# Renew using update-ssl (recommended)
+sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+
+# Or using certbot directly
 # Renew specific certificate
 sudo certbot renew --cert-name example.com
 
@@ -145,10 +149,44 @@ sudo systemctl list-timers certbot.timer
 
 ---
 
-## Adding SSL After Initial Setup
+## Managing SSL Certificates
 
-If you initially set up without SSL, you can add it later:
+### The update-ssl Command
 
+Update or enable SSL certificates for existing sites using the `update-ssl` command:
+
+```bash
+sudo svp update-ssl example.com --le-email admin@example.com
+```
+
+**What it does:**
+- Obtains or renews Let's Encrypt certificate
+- Updates Nginx configuration for HTTPS
+- Sets up HTTP to HTTPS redirect
+- Configures secure SSL settings
+
+**Options:**
+```bash
+# Enable SSL for a site
+sudo svp update-ssl example.com --le-email admin@example.com
+
+# Force renewal of existing certificate
+sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+
+# Use staging environment (for testing)
+sudo svp update-ssl example.com --le-email admin@example.com --staging
+```
+
+### Adding SSL After Initial Setup
+
+If you initially set up without SSL, you can add it later using either method:
+
+**Method 1: Using update-ssl command (recommended)**
+```bash
+sudo svp update-ssl example.com --le-email admin@example.com
+```
+
+**Method 2: Using certbot directly**
 ```bash
 sudo certbot --nginx -d example.com \
   --non-interactive \
@@ -156,7 +194,7 @@ sudo certbot --nginx -d example.com \
   --email admin@example.com
 ```
 
-This will:
+Both methods will:
 1. Obtain certificate
 2. Update Nginx configuration
 3. Set up HTTPS redirect
@@ -231,7 +269,7 @@ server {
    ```bash
    # Check DNS
    dig +short example.com
-   
+
    # Should match your server IP
    curl -4 ifconfig.me
    ```
@@ -240,7 +278,7 @@ server {
    ```bash
    # Check firewall
    sudo ufw status
-   
+
    # Allow port 80
    sudo ufw allow 80/tcp
    ```
@@ -248,6 +286,11 @@ server {
 3. **Domain validation failed**
    - Ensure domain is accessible via HTTP first
    - Check Nginx is running: `sudo systemctl status nginx`
+
+**Solution:** Use the update-ssl command to retry:
+```bash
+sudo svp update-ssl example.com --le-email admin@example.com
+```
 
 ### Rate Limit Errors
 
@@ -259,6 +302,10 @@ Let's Encrypt limits to 5 certificates per domain per week.
 Wait 7 days or use staging environment for testing:
 
 ```bash
+# Using update-ssl with staging
+sudo svp update-ssl example.com --le-email admin@example.com --staging
+
+# Or using certbot directly
 sudo certbot --nginx -d example.com --staging
 ```
 
@@ -271,6 +318,10 @@ sudo certbot certificates
 
 If expired, renew:
 ```bash
+# Using update-ssl (recommended)
+sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+
+# Or using certbot directly
 sudo certbot renew --force-renewal
 ```
 
@@ -411,12 +462,11 @@ renew_hook = systemctl reload nginx
 
 ### Setting Up HTTP Only
 
-For development or testing:
+For development or testing (simply omit --le-email):
 
 ```bash
 sudo svp setup dev.example.local \
-  --cms drupal \
-  --ssl=false
+  --cms drupal
 ```
 
 **Use when:**
@@ -430,7 +480,12 @@ sudo svp setup dev.example.local \
 Convert HTTP to HTTPS:
 
 1. Configure DNS to point to server
-2. Run certbot:
+2. Enable SSL using update-ssl:
+   ```bash
+   sudo svp update-ssl example.com --le-email admin@example.com
+   ```
+
+   Or using certbot directly:
    ```bash
    sudo certbot --nginx -d example.com
    ```

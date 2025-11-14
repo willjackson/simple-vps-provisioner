@@ -129,6 +129,10 @@ sudo svp php-update example.com --php-version 8.4
 
 **Update SSL certificate:**
 ```bash
+# Using update-ssl command (recommended)
+sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+
+# Or using certbot directly
 sudo certbot --nginx -d example.com --force-renewal
 ```
 
@@ -280,11 +284,22 @@ sudo svp setup --cms drupal --domain example.com
 ### Scenario 2: Switch from HTTP to HTTPS
 
 ```bash
-# Reprovision with SSL enabled
+# Reprovision from HTTP to HTTPS
 sudo svp setup example.com \
   --cms drupal \
   --le-email admin@example.com \
   --db /path/to/backup.sql.gz
+```
+
+Or add SSL after reprovisioning:
+```bash
+# First reprovision without SSL
+sudo svp setup example.com \
+  --cms drupal \
+  --db /path/to/backup.sql.gz
+
+# Then add SSL
+sudo svp update-ssl example.com --le-email admin@example.com
 ```
 
 ### Scenario 3: Fix Corrupted Installation

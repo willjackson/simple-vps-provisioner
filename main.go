@@ -53,6 +53,8 @@ func main() {
 		updateCommand()
 	case "php-update":
 		phpUpdateCommand()
+	case "update-ssl":
+		updateSSLCommand()
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", command)
 		showGeneralHelp()
@@ -72,6 +74,7 @@ func showGeneralHelp() {
 	fmt.Println("  verify       Verify system configuration without making changes")
 	fmt.Println("  update       Check for and install updates to svp")
 	fmt.Println("  php-update   Update PHP version for a specific domain")
+	fmt.Println("  update-ssl   Manage SSL certificates (enable, disable, renew, check)")
 	fmt.Println()
 	fmt.Println("Global Flags:")
 	fmt.Println("  --version     Show version information")
@@ -109,7 +112,7 @@ func setupCommand() {
 	fs.StringVar(&cfg.DBImport, "db", "", "Path to database file for import")
 	fs.StringVar(&cfg.CreateSwap, "create-swap", "auto", "Create swap: yes, no, or auto")
 	fs.BoolVar(&cfg.UFWEnable, "firewall", true, "Enable UFW firewall")
-	fs.BoolVar(&cfg.SSLEnable, "ssl", true, "Enable SSL/HTTPS with Let's Encrypt")
+	fs.BoolVar(&cfg.SSLEnable, "ssl", false, "Enable SSL/HTTPS with Let's Encrypt")
 	fs.BoolVar(&cfg.Debug, "debug", false, "Enable debug mode")
 	fs.BoolVar(&cfg.KeepExistingDB, "keep-existing-db", false, "Keep existing database and drop tables")
 
@@ -129,7 +132,7 @@ func setupCommand() {
 		fmt.Println("  --cms string")
 		fmt.Println("        CMS to install: drupal or wordpress (default \"drupal\")")
 		fmt.Println("  --le-email string")
-		fmt.Println("        Let's Encrypt email for SSL certificates")
+		fmt.Println("        Let's Encrypt email for SSL certificates (enables SSL automatically)")
 		fmt.Println("  --php-version string")
 		fmt.Println("        PHP version to install (default \"8.4\")")
 		fmt.Println("  --git-repo string")
@@ -157,7 +160,7 @@ func setupCommand() {
 		fmt.Println("  --firewall")
 		fmt.Println("        Enable UFW firewall (default true)")
 		fmt.Println("  --ssl")
-		fmt.Println("        Enable SSL/HTTPS (default true)")
+		fmt.Println("        Enable SSL/HTTPS (default false, auto-enabled if --le-email provided)")
 		fmt.Println("  --debug")
 		fmt.Println("        Enable debug mode")
 		fmt.Println()
@@ -166,7 +169,7 @@ func setupCommand() {
 		fmt.Println("  svp setup example.com --cms drupal --le-email admin@example.com")
 		fmt.Println()
 		fmt.Println("  # WordPress without SSL:")
-		fmt.Println("  svp setup example.com --cms wordpress --ssl=false")
+		fmt.Println("  svp setup example.com --cms wordpress")
 		fmt.Println()
 		fmt.Println("  # Deploy from Git with specific PHP version:")
 		fmt.Println("  svp setup example.com --cms drupal \\")
@@ -209,11 +212,24 @@ func setupCommand() {
 		os.Exit(1)
 	}
 
-	// Warn if SSL is enabled but no email provided
+	// Handle SSL configuration
+	// If --le-email is provided, automatically enable SSL
+	if cfg.LEEmail != "" && !cfg.SSLEnable {
+		cfg.SSLEnable = true
+	}
+
+	// If SSL is enabled but no email provided, prompt for it
 	if cfg.SSLEnable && cfg.LEEmail == "" {
-		utils.Warn("SSL is enabled but no Let's Encrypt email provided. SSL will be skipped.")
-		utils.Warn("Use --le-email to enable SSL/HTTPS.")
-		cfg.SSLEnable = false
+		fmt.Print("SSL is enabled but no Let's Encrypt email provided.\n")
+		fmt.Print("Please enter an email address for Let's Encrypt notifications: ")
+		var email string
+		fmt.Scanln(&email)
+		if email == "" {
+			utils.Warn("No email provided. SSL will be disabled.")
+			cfg.SSLEnable = false
+		} else {
+			cfg.LEEmail = email
+		}
 	}
 
 	// Execute setup
@@ -395,6 +411,96 @@ func phpUpdateCommand() {
 	// Execute PHP update
 	if err := cmd.PHPUpdate(cfg); err != nil {
 		utils.Err("PHP update failed: %v", err)
+		os.Exit(1)
+	}
+}
+
+func updateSSLCommand() {
+	cfg := &types.Config{Mode: "update-ssl"}
+	fs := flag.NewFlagSet("update-ssl", flag.ExitOnError)
+
+	var action string
+	fs.StringVar(&action, "action", "", "Action to perform: enable, disable, renew, or check")
+	fs.StringVar(&cfg.LEEmail, "le-email", "", "Let's Encrypt email (required for enable)")
+	fs.BoolVar(&cfg.Debug, "debug", false, "Enable debug mode")
+
+	fs.Usage = func() {
+		fmt.Printf("Simple VPS Provisioner (svp) v%s - SSL Management Command\n\n", version)
+		fmt.Println("Usage:")
+		fmt.Println("  svp update-ssl DOMAIN ACTION [options]")
+		fmt.Println()
+		fmt.Println("Description:")
+		fmt.Println("  Manage SSL certificates for a domain.")
+		fmt.Println()
+		fmt.Println("Arguments:")
+		fmt.Println("  DOMAIN")
+		fmt.Println("        Domain to manage SSL for (required)")
+		fmt.Println("  ACTION")
+		fmt.Println("        Action to perform (required)")
+		fmt.Println("        - enable:  Obtain and configure SSL certificate")
+		fmt.Println("        - disable: Remove SSL configuration (keeps certificate)")
+		fmt.Println("        - renew:   Force renewal of existing certificate")
+		fmt.Println("        - check:   Show certificate status and expiry")
+		fmt.Println()
+		fmt.Println("Optional Flags:")
+		fmt.Println("  --le-email string")
+		fmt.Println("        Let's Encrypt email (required for enable action)")
+		fmt.Println("  --debug")
+		fmt.Println("        Enable debug mode")
+		fmt.Println()
+		fmt.Println("Examples:")
+		fmt.Println("  # Enable SSL for a domain:")
+		fmt.Println("  svp update-ssl example.com enable --le-email admin@example.com")
+		fmt.Println()
+		fmt.Println("  # Check SSL certificate status:")
+		fmt.Println("  svp update-ssl example.com check")
+		fmt.Println()
+		fmt.Println("  # Renew SSL certificate:")
+		fmt.Println("  svp update-ssl example.com renew")
+		fmt.Println()
+		fmt.Println("  # Disable SSL (switch to HTTP):")
+		fmt.Println("  svp update-ssl example.com disable")
+		fmt.Println()
+		fmt.Printf("Documentation: %s\n", documentationURL)
+	}
+
+	// Check if help is requested or arguments are missing
+	if len(os.Args) < 4 || os.Args[2] == "--help" || os.Args[2] == "-help" {
+		fs.Usage()
+		os.Exit(0)
+	}
+
+	// Parse domain and action from positional arguments
+	cfg.PrimaryDomain = os.Args[2]
+	action = os.Args[3]
+	cfg.SSLAction = action
+
+	// Parse flags from remaining arguments (skip command, domain, and action)
+	fs.Parse(os.Args[4:])
+
+	// Enable debug mode if requested
+	if cfg.Debug {
+		os.Setenv("DEBUG", "1")
+		fmt.Println("DEBUG MODE ENABLED")
+	}
+
+	// Validate action
+	validActions := map[string]bool{
+		"enable":  true,
+		"disable": true,
+		"renew":   true,
+		"check":   true,
+	}
+	if !validActions[action] {
+		utils.Err("Invalid action: %s", action)
+		fmt.Println("\nValid actions: enable, disable, renew, check")
+		fmt.Println("Run 'svp update-ssl --help' for more information")
+		os.Exit(1)
+	}
+
+	// Execute SSL update
+	if err := cmd.UpdateSSL(cfg); err != nil {
+		utils.Err("SSL management failed: %v", err)
 		os.Exit(1)
 	}
 }

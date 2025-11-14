@@ -28,11 +28,14 @@ With a single command, svp provisions your entire server stack:
 # Install svp
 curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh | sudo bash
 
-# Provision a Drupal site
+# Provision a Drupal site with SSL
 sudo svp setup example.com --cms drupal --le-email admin@example.com
 
-# Provision a WordPress site
+# Provision a WordPress site with SSL
 sudo svp setup myblog.com --cms wordpress --le-email admin@myblog.com
+
+# Or without SSL (omit --le-email, add SSL later with update-ssl)
+sudo svp setup example.com --cms drupal
 ```
 
 That's it! Your site is ready at `https://example.com`
@@ -77,7 +80,11 @@ The tool automatically detects your OS and configures packages accordingly.
 Perfect for starting new Drupal projects with best practices built-in.
 
 ```bash
+# With SSL
 sudo svp setup mysite.com --cms drupal --le-email admin@mysite.com
+
+# Without SSL initially (add later with update-ssl)
+sudo svp setup mysite.com --cms drupal
 ```
 
 ### Deploy Existing Site
@@ -125,7 +132,7 @@ sudo svp setup myblog.com \
 |---------|-------------|
 | **Automated Setup** | Complete LAMP stack in one command |
 | **CMS Support** | Drupal and WordPress ready |
-| **SSL/HTTPS** | Automatic Let's Encrypt certificates |
+| **SSL/HTTPS** | Let's Encrypt certificates (enabled with --le-email) |
 | **Security** | Firewall, hardening, secure defaults |
 | **Multi-Domain** | Multiple sites per server |
 | **Git Deploy** | Clone from repositories |

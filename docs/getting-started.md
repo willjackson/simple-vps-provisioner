@@ -90,7 +90,7 @@ svp will automatically:
 4. Create database and user
 5. Install Composer
 6. Install your CMS
-7. Obtain SSL certificate
+7. Obtain SSL certificate (if --le-email provided)
 8. Configure firewall
 
 The process takes 5-15 minutes depending on your VPS speed.
@@ -98,9 +98,11 @@ The process takes 5-15 minutes depending on your VPS speed.
 ### Step 4: Access Your Site
 
 Once complete, you'll see a summary with:
-- **Site URL**: `https://example.com`
+- **Site URL**: `https://example.com` (if --le-email was provided) or `http://example.com` (default)
 - **Database credentials**: `/etc/svp/sites/example.com.db.txt`
 - **Login link**: One-time admin login (Drupal)
+
+HTTPS is only available if you provided the `--le-email` flag during setup. By default, sites run on HTTP only. You can enable SSL later using the `update-ssl` command (see below).
 
 ## Common Options
 
@@ -140,9 +142,65 @@ sudo svp setup example.com \
 
 ### HTTP Only (No SSL)
 
+By default, sites are created without SSL. Simply omit the `--le-email` flag:
+
 ```bash
-sudo svp setup example.com --cms drupal --ssl=false
+sudo svp setup example.com --cms drupal
 ```
+
+SSL is only enabled when you provide the `--le-email` flag during setup.
+
+## Managing SSL After Setup
+
+You can enable, check, renew, or disable SSL at any time using the `update-ssl` command.
+
+### Enable SSL After Initial Setup
+
+If you created a site without SSL, you can enable it later:
+
+```bash
+sudo svp update-ssl example.com --le-email admin@example.com
+```
+
+This will:
+- Install Certbot (if not already installed)
+- Obtain a Let's Encrypt SSL certificate
+- Update Nginx configuration to use HTTPS
+- Set up automatic certificate renewal
+
+### Check SSL Status
+
+To see the current SSL status for a site:
+
+```bash
+sudo svp update-ssl example.com --check
+```
+
+This displays:
+- Whether SSL is enabled
+- Certificate expiration date (if enabled)
+- Certificate domains covered
+
+### Renew SSL Certificate
+
+Certificates renew automatically, but you can manually renew:
+
+```bash
+sudo svp update-ssl example.com --renew
+```
+
+### Disable SSL
+
+To remove SSL and revert to HTTP only:
+
+```bash
+sudo svp update-ssl example.com --disable
+```
+
+This will:
+- Update Nginx to use HTTP only
+- Keep the certificate in place (but not use it)
+- Stop automatic renewal
 
 ## Understanding the Output
 
@@ -164,7 +222,7 @@ svp provides clear, color-coded output:
 - PHP-FPM and extensions
 - MariaDB database server
 - Composer
-- Certbot (for SSL)
+- Certbot (optional, installed only when SSL is enabled via --le-email)
 - UFW firewall
 - WP-CLI (for WordPress)
 

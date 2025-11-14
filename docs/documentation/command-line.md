@@ -140,6 +140,50 @@ svp php-update DOMAIN --php-version VERSION
 sudo svp php-update example.com --php-version 8.4
 ```
 
+### SSL Management Command
+
+Manage SSL certificates for a domain.
+
+```bash
+svp update-ssl DOMAIN ACTION [options]
+```
+
+**Actions:**
+- `enable` - Enable SSL and obtain Let's Encrypt certificate
+- `disable` - Disable SSL and switch to HTTP only
+- `renew` - Force renewal of existing SSL certificate
+- `check` - Check SSL certificate status and expiration
+
+**What it does:**
+- Manages SSL certificates for existing domains
+- Enables/disables HTTPS configuration
+- Renews certificates before expiration
+- Validates certificate status
+
+**Examples:**
+
+Enable SSL for an existing domain:
+```bash
+sudo svp update-ssl example.com enable --le-email admin@example.com
+```
+
+Disable SSL and switch to HTTP:
+```bash
+sudo svp update-ssl example.com disable
+```
+
+Force certificate renewal:
+```bash
+sudo svp update-ssl example.com renew
+```
+
+Check certificate status:
+```bash
+sudo svp update-ssl example.com check
+```
+
+**Note:** The `enable` action requires `--le-email` to obtain a certificate.
+
 ---
 
 ## Global Flags
@@ -271,13 +315,26 @@ sudo svp setup example.com --cms drupal --php-version 8.4
 Enable or disable SSL/HTTPS.
 
 ```bash
---ssl=true   # Enable SSL (default)
---ssl=false  # Disable SSL (HTTP only)
+--ssl=true   # Enable SSL explicitly
+--ssl=false  # Disable SSL (HTTP only, default)
 ```
 
-**Note:** Requires `--le-email` when enabled.
+**Default behavior:**
+- SSL is disabled by default (false)
+- Automatically enabled when `--le-email` is provided
+- Can be explicitly set with `--ssl=true` or `--ssl=false`
 
-**Example (with SSL):**
+**Note:** When SSL is enabled, it requires `--le-email` to obtain certificates.
+
+**Example (with SSL via --le-email):**
+```bash
+sudo svp setup \
+  example.com \
+  --cms drupal \
+  --le-email admin@example.com
+```
+
+**Example (with SSL explicitly):**
 ```bash
 sudo svp setup \
   example.com \
@@ -286,9 +343,9 @@ sudo svp setup \
   --le-email admin@example.com
 ```
 
-**Example (HTTP only):**
+**Example (HTTP only - omit --le-email):**
 ```bash
-sudo svp setup example.com --cms drupal --ssl=false
+sudo svp setup example.com --cms drupal
 ```
 
 ### --le-email
@@ -299,8 +356,12 @@ Let's Encrypt email for SSL certificates.
 --le-email admin@example.com
 ```
 
+**Behavior:**
+- Automatically enables SSL when provided
+- No need to specify `--ssl=true` separately
+
 **Required when:**
-- SSL is enabled (default)
+- Enabling SSL during setup
 - Obtaining SSL certificates
 
 **Used for:**
@@ -540,11 +601,13 @@ sudo svp setup example.com --cms drupal --create-swap yes
 
 ## Complete Examples
 
-### Minimal Drupal (HTTP only)
+### Minimal Drupal (HTTP only, no SSL)
 
 ```bash
-sudo svp setup example.com --cms drupal --ssl=false
+sudo svp setup example.com --cms drupal
 ```
+
+Note: SSL is disabled by default when --le-email is not provided.
 
 ### Production Drupal with SSL
 
@@ -600,9 +663,51 @@ sudo svp setup example.com --cms drupal
 sudo svp setup example.com --cms drupal --keep-existing-db
 ```
 
+### Enable SSL on Existing Site
+
+```bash
+sudo svp update-ssl example.com enable --le-email admin@example.com
+```
+
+### Disable SSL on Existing Site
+
+```bash
+sudo svp update-ssl example.com disable
+```
+
+### Renew SSL Certificate
+
+```bash
+sudo svp update-ssl example.com renew
+```
+
 ---
 
 ## Tips
+
+### SSL Configuration
+
+**When to use --le-email vs update-ssl:**
+
+Use `--le-email` during initial setup:
+```bash
+sudo svp setup example.com --cms drupal --le-email admin@example.com
+```
+
+Use `update-ssl` to manage SSL on existing sites:
+```bash
+sudo svp update-ssl example.com enable --le-email admin@example.com
+sudo svp update-ssl example.com disable
+sudo svp update-ssl example.com renew
+sudo svp update-ssl example.com check
+```
+
+**SSL Behavior and Defaults:**
+- SSL is disabled by default (HTTP only)
+- Providing `--le-email` automatically enables SSL
+- You can explicitly disable SSL with `--ssl=false` even if `--le-email` is provided
+- Use `update-ssl` command to add/remove SSL after initial setup
+- Certificates auto-renew via certbot, but you can force renewal with `update-ssl renew`
 
 ### Using Quotes
 

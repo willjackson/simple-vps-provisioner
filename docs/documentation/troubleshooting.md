@@ -54,17 +54,26 @@ sudo bash install.sh
 
 3. **Rate limiting**
    - Let's Encrypt has rate limits (5 certs/week per domain)
-   - Wait 7 days or use staging: `-le-staging`
+   - Wait 7 days or use staging environment for testing:
+   ```bash
+   sudo svp update-ssl example.com --le-email admin@example.com --staging
+   ```
 
 4. **Invalid email**
-   - Ensure `-le-email` is valid
+   - Ensure `--le-email` is provided with a valid email address
    - Example: `admin@example.com`
 
 ### "Failed to obtain certificate" with existing Nginx
 
 **Problem:** Certificate fails when Nginx already running.
 
-**Solution:**
+**Solution 1: Use update-ssl command (recommended)**
+```bash
+# Retry SSL setup for existing site
+sudo svp update-ssl example.com --le-email admin@example.com
+```
+
+**Solution 2: Manual approach**
 ```bash
 # Stop Nginx temporarily
 sudo systemctl stop nginx
@@ -73,6 +82,34 @@ sudo systemctl stop nginx
 sudo svp setup example.com --cms drupal --le-email admin@example.com
 
 # Nginx will be restarted automatically
+```
+
+### Adding SSL to existing HTTP-only site
+
+**Problem:** Site was set up without SSL, need to add it later.
+
+**Solution:**
+```bash
+# Use update-ssl command
+sudo svp update-ssl example.com --le-email admin@example.com
+
+# This will:
+# 1. Obtain Let's Encrypt certificate
+# 2. Update Nginx configuration for HTTPS
+# 3. Set up HTTP to HTTPS redirect
+```
+
+### SSL certificate needs renewal
+
+**Problem:** Certificate expired or about to expire.
+
+**Solution:**
+```bash
+# Force renewal using update-ssl
+sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+
+# Or check auto-renewal status
+sudo systemctl status certbot.timer
 ```
 
 ## Database Issues

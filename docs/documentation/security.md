@@ -30,11 +30,12 @@ svp implements security by default, but additional hardening can improve protect
 - IPv4 and IPv6 configured
 
 **2. SSL/HTTPS**
-- Let's Encrypt certificates
+- Let's Encrypt certificates (when --le-email is provided)
 - Modern TLS protocols only
 - Strong cipher suites
 - HSTS enabled
 - HTTP → HTTPS redirect
+- SSL disabled by default for flexibility
 
 **3. PHP Security**
 - `expose_php = Off`
@@ -507,7 +508,7 @@ gpg --decrypt backup.tar.gz.gpg | tar -xzf -
 - [ ] SSH key-only authentication
 - [ ] Disable root login
 - [ ] UFW firewall enabled
-- [ ] SSL/HTTPS configured
+- [ ] SSL/HTTPS configured (use --le-email or update-ssl command)
 - [ ] Strong passwords for all users
 - [ ] Database secured
 
@@ -555,6 +556,18 @@ echo | openssl s_client -connect example.com:443 -servername example.com
 
 # Online test
 # https://www.ssllabs.com/ssltest/
+```
+
+### Enable or Update SSL
+
+For sites without SSL or to renew certificates:
+
+```bash
+# Enable SSL for a site
+sudo svp update-ssl example.com --le-email admin@example.com
+
+# Force renewal
+sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
 ```
 
 ### Port Scanning

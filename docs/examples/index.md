@@ -351,9 +351,8 @@ rsync -avz --delete \
 #### Step 5: Enable SSL
 
 ```bash
-sudo svp setup mysite.com \
-  --cms drupal \
-  --le-email admin@mysite.com
+# Add SSL using update-ssl command
+sudo svp update-ssl mysite.com --le-email admin@mysite.com
 ```
 
 #### Step 6: Switch DNS
@@ -386,6 +385,29 @@ sudo svp php-update mysite.com \
 
 ---
 
+### Manage SSL Certificates
+
+Add or update SSL certificates for existing sites:
+
+```bash
+# Enable SSL on a site that was set up without it
+sudo svp update-ssl mysite.com --le-email admin@mysite.com
+
+# Force renewal of an existing certificate
+sudo svp update-ssl mysite.com --le-email admin@mysite.com --force-renewal
+
+# Test with Let's Encrypt staging environment
+sudo svp update-ssl mysite.com --le-email admin@mysite.com --staging
+```
+
+**Common use cases:**
+- Adding SSL to a site initially set up without it
+- Renewing certificates that failed to auto-renew
+- Testing SSL setup before using production certificates
+- Updating SSL configuration after server changes
+
+---
+
 ### Monorepo Structure
 
 Repository with Drupal in subdirectory:
@@ -411,14 +433,15 @@ sudo svp setup mysite.com \
 
 ### HTTP Only (Internal Network)
 
-For internal tools without SSL:
+For internal tools without SSL (simply omit --le-email):
 
 ```bash
 sudo svp setup internal.mycompany.local \
   --cms drupal \
-  --ssl=false \
   --firewall=false
 ```
+
+Note: SSL is disabled by default when --le-email is not provided.
 
 ---
 
@@ -482,10 +505,13 @@ dig +short mysite.com
 # Should return your server IP
 123.45.67.89
 
-# Test without SSL first
-sudo svp setup mysite.com --cms drupal --ssl=false
+# Test without SSL first (just omit --le-email)
+sudo svp setup mysite.com --cms drupal
 
-# Add SSL later
+# Add SSL later using update-ssl
+sudo svp update-ssl mysite.com --le-email admin@mysite.com
+
+# Or using certbot directly
 sudo certbot --nginx -d mysite.com --non-interactive --agree-tos --email admin@mysite.com
 ```
 
@@ -533,13 +559,16 @@ Result:
 ### 1. Always Test Without SSL First
 
 ```bash
-# Step 1: Test HTTP
-sudo svp setup --cms drupal --domain example.com --ssl=false
+# Step 1: Test HTTP (omit --le-email)
+sudo svp setup --cms drupal --domain example.com
 
 # Step 2: Verify site works
 curl -I http://example.com
 
-# Step 3: Add SSL
+# Step 3: Add SSL using update-ssl
+sudo svp update-ssl example.com --le-email admin@example.com
+
+# Or using certbot directly
 sudo certbot --nginx -d example.com
 ```
 

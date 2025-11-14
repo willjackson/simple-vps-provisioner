@@ -463,8 +463,8 @@ echo "=== Restore Complete ==="
 # Get latest release
 curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh | sudo bash
 
-# Provision site (no database import yet)
-sudo svp setup example.com --cms drupal --ssl=false
+# Provision site (no SSL yet - omit --le-email)
+sudo svp setup example.com --cms drupal
 ```
 
 **2. Restore from backup:**
@@ -483,6 +483,10 @@ A    example.com    NEW_SERVER_IP
 
 **4. Enable SSL:**
 ```bash
+# Using update-ssl command
+sudo svp update-ssl example.com --le-email admin@example.com
+
+# Or using certbot directly
 sudo certbot --nginx -d example.com
 ```
 
@@ -495,8 +499,8 @@ sudo certbot --nginx -d example.com
 Regularly test your backups:
 
 ```bash
-# Create test site
-sudo svp setup test.example.com --cms drupal --ssl=false
+# Create test site (no SSL - omit --le-email)
+sudo svp setup test.example.com --cms drupal
 
 # Restore backup to test site
 drush-test.example.com sql-drop -y

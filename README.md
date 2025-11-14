@@ -13,12 +13,12 @@ Simple VPS Provisioner is a command-line tool that transforms a fresh Debian or 
 
 ## Features
 
-- ✅ **Complete LAMP Stack** - Nginx, PHP-FPM, MariaDB, SSL
+- ✅ **Complete LAMP Stack** - Nginx, PHP-FPM, MariaDB, optional SSL
 - ✅ **One Command Setup** - From fresh VPS to running site in minutes
 - ✅ **Multi-CMS** - Drupal and WordPress support
 - ✅ **Multi-Domain** - Multiple sites on one server
 - ✅ **Git Deployment** - Clone and deploy from repositories
-- ✅ **Automatic SSL** - Let's Encrypt with auto-renewal
+- ✅ **Optional SSL** - Let's Encrypt with auto-renewal (opt-in via --le-email)
 - ✅ **Security First** - Firewall, hardening, isolation
 - ✅ **Idempotent** - Safe to run multiple times
 
@@ -44,7 +44,13 @@ sudo svp setup example.com --cms drupal --le-email admin@example.com
 sudo svp setup example.com --cms wordpress --le-email admin@example.com
 ```
 
-That's it! Visit `https://example.com` 🎉
+That's it! Visit `https://example.com` (HTTPS enabled with --le-email) 🎉
+
+**HTTP-only setup (no SSL):**
+```bash
+sudo svp setup example.com --cms drupal
+```
+Visit `http://example.com`
 
 ---
 
@@ -104,6 +110,9 @@ sudo svp verify
 # Update svp
 sudo svp update
 
+# Update SSL certificates (check renewal or enable SSL)
+sudo svp update-ssl example.com check
+
 # View help
 svp
 ```
@@ -119,10 +128,12 @@ For each site, svp configures:
 | **Nginx** | Web server with optimized config |
 | **PHP-FPM** | Isolated per-domain pools |
 | **MariaDB** | Database with secure credentials |
-| **SSL/HTTPS** | Let's Encrypt certificates |
+| **SSL/HTTPS** | Let's Encrypt certificates (optional, enabled via --le-email) |
 | **Firewall** | UFW configured (SSH, HTTP, HTTPS) |
 | **Composer** | PHP dependency manager |
 | **Drush/WP-CLI** | CMS-specific tools |
+
+**Note:** SSL is disabled by default. To enable HTTPS, provide `--le-email` during setup or use `svp update-ssl` after initial setup.
 
 ---
 
@@ -133,12 +144,43 @@ For each site, svp configures:
 | `--cms` | `drupal` or `wordpress` | `drupal` |
 | `--domain` | Primary domain (required) | - |
 | `--php-version` | PHP version | `8.4` |
-| `--le-email` | Let's Encrypt email for SSL | - |
+| `--le-email` | Let's Encrypt email (enables SSL when provided) | - |
 | `--git-repo` | Git repository URL | - |
 | `--git-branch` | Git branch (uses default if not specified) | - |
 | `--db` | Database file to import | - |
 
+**SSL Behavior:** SSL is disabled by default. When you provide `--le-email`, SSL is automatically enabled with Let's Encrypt certificates.
+
 [View all flags →](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line)
+
+---
+
+## SSL Management
+
+### Enable SSL After Initial Setup
+
+If you initially set up a site without SSL, you can enable it later:
+
+```bash
+# Enable SSL for an existing site
+sudo svp update-ssl example.com --le-email admin@example.com
+```
+
+### Check SSL Certificate Status
+
+```bash
+# Check certificate renewal status
+sudo svp update-ssl example.com check
+```
+
+### SSL During Initial Setup
+
+```bash
+# Enable SSL during setup (recommended)
+sudo svp setup example.com --cms drupal --le-email admin@example.com
+```
+
+Certificates are automatically renewed via a cron job.
 
 ---
 
