@@ -51,7 +51,6 @@ That's it! Visit `https://example.com` 🎉
 ## System Requirements
 
 - **OS**: Debian 11-13 or Ubuntu 20.04-24.04 LTS
-- **RAM**: 1 GB minimum (2 GB+ recommended)
 - **Access**: Root/sudo privileges
 
 ---
