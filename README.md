@@ -142,7 +142,7 @@ For each site, svp configures:
 | `-git-branch` | Git branch (uses default if not specified) | - |
 | `-db` | Database file to import | - |
 
-[View all flags →](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line/)
+[View all flags →](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line)
 
 ---
 
@@ -152,11 +152,11 @@ For each site, svp configures:
 
 ### Quick Links
 
-- [Getting Started Guide](https://willjackson.github.io/simple-vps-provisioner/getting-started/)
-- [Complete Documentation](https://willjackson.github.io/simple-vps-provisioner/documentation/)
-- [Examples & Use Cases](https://willjackson.github.io/simple-vps-provisioner/examples/)
-- [Command-Line Reference](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line/)
-- [Troubleshooting](https://willjackson.github.io/simple-vps-provisioner/documentation/troubleshooting/)
+- [Getting Started Guide](https://willjackson.github.io/simple-vps-provisioner/getting-started)
+- [Complete Documentation](https://willjackson.github.io/simple-vps-provisioner/documentation)
+- [Examples & Use Cases](https://willjackson.github.io/simple-vps-provisioner/examples)
+- [Command-Line Reference](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line)
+- [Troubleshooting](https://willjackson.github.io/simple-vps-provisioner/documentation/troubleshooting)
 
 ---
 
@@ -189,7 +189,7 @@ cd simple-vps-provisioner
 sudo bash install.sh
 ```
 
-[More installation options →](https://willjackson.github.io/simple-vps-provisioner/getting-started/)
+[More installation options →](https://willjackson.github.io/simple-vps-provisioner/getting-started)
 
 ---
 
@@ -224,13 +224,13 @@ sudo svp setup -cms wordpress -domain blog.com -git-repo https://github.com/me/b
 sudo svp setup -cms drupal -domain myapp.com -extra-domains "staging.myapp.com" -le-email dev@myapp.com
 ```
 
-[View more examples →](https://willjackson.github.io/simple-vps-provisioner/examples/)
+[View more examples →](https://willjackson.github.io/simple-vps-provisioner/examples)
 
 ---
 
 <div align="center">
 
-**[Get Started](https://willjackson.github.io/simple-vps-provisioner/getting-started/) • [Documentation](https://willjackson.github.io/simple-vps-provisioner/documentation/) • [Examples](https://willjackson.github.io/simple-vps-provisioner/examples/)**
+**[Get Started](https://willjackson.github.io/simple-vps-provisioner/getting-started) • [Documentation](https://willjackson.github.io/simple-vps-provisioner/documentation) • [Examples](https://willjackson.github.io/simple-vps-provisioner/examples)**
 
 Made with ❤️ for the Drupal and WordPress communities
 
