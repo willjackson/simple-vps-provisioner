@@ -92,7 +92,7 @@ func enableSSL(domain, email string) error {
 	}
 
 	// Reload nginx
-	if err := system.ReloadNginx(); err != nil {
+	if err := web.ReloadNginx(); err != nil {
 		return err
 	}
 
@@ -173,7 +173,7 @@ func disableSSL(domain string) error {
 	}
 
 	// Reload nginx
-	if err := system.ReloadNginx(); err != nil {
+	if err := web.ReloadNginx(); err != nil {
 		return err
 	}
 
@@ -205,7 +205,7 @@ func renewSSL(domain string) error {
 	}
 
 	// Reload nginx
-	if err := system.ReloadNginx(); err != nil {
+	if err := web.ReloadNginx(); err != nil {
 		return err
 	}
 
