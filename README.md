@@ -4,6 +4,14 @@
 
 Simple VPS Provisioner is a command-line tool that transforms a fresh Debian or Ubuntu VPS into a production-ready LAMP environment for Drupal or WordPress.
 
+## ⚠️ Intended Use
+
+This tool is designed for **fresh VPS installations** running the latest versions of:
+- **Debian** (11, 12, or 13 Trixie)
+- **Ubuntu LTS** (20.04, 22.04, or 24.04)
+
+**Important:** Run `svp` on a newly provisioned VPS *before* installing other software. Running on a system with existing web server, database, or PHP configurations may cause conflicts. For best results, start with a clean OS installation.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](https://go.dev/)
 

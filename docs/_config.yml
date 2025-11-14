@@ -2,7 +2,7 @@
 title: Simple VPS Provisioner
 description: Automated VPS provisioning for Drupal and WordPress on Debian/Ubuntu
 theme: jekyll-theme-cayman
-baseurl: /simple-vps-provisioner
+baseurl: /
 url: https://willjackson.github.io
 
 # Navigation
