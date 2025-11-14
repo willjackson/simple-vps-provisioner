@@ -215,27 +215,56 @@ func addPHPRepoUbuntu() error {
 		return fmt.Errorf("failed to install software-properties-common: %v", err)
 	}
 
-	// Import PPA GPG key first
-	utils.Log("Importing PPA GPG key...")
-	_, err = utils.RunShell("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 14AA40EC0831756756D7F66C4F4EA0AAE5267A6C")
-	if err != nil {
-		utils.Warn("Failed to import key via apt-key (deprecated), trying gpg method...")
-		// Try alternative method with gpg
-		_, err = utils.RunShell("gpg --keyserver keyserver.ubuntu.com --recv-keys 14AA40EC0831756756D7F66C4F4EA0AAE5267A6C && gpg --export 14AA40EC0831756756D7F66C4F4EA0AAE5267A6C | apt-key add -")
-		if err != nil {
-			utils.Warn("Failed to import GPG key, continuing anyway (may be already present)")
-		}
-	}
-
 	// Clean up any old PPA files that might exist from previous runs
 	// This ensures we don't have conflicting configurations
 	utils.Log("Cleaning up any old PPA configurations...")
+	// Remove any files with ondrej and php in the name
 	_, _ = utils.RunShell("rm -f /etc/apt/sources.list.d/*ondrej*php*.list 2>/dev/null || true")
+	// Also check for generic ppa files that might contain ondrej/php
+	_, _ = utils.RunShell("grep -l 'ondrej/php' /etc/apt/sources.list.d/*.list 2>/dev/null | xargs rm -f 2>/dev/null || true")
+	// Remove from main sources.list if present (shouldn't be, but just in case)
+	_, _ = utils.RunShell("sed -i '/ondrej\/php/d' /etc/apt/sources.list 2>/dev/null || true")
+
+	// Import PPA GPG key using modern method
+	utils.Log("Importing PPA GPG key...")
+	// Download key to proper location for modern apt
+	keyringPath := "/etc/apt/keyrings/ondrej-php-ppa.gpg"
+	_, err = utils.RunShell("mkdir -p /etc/apt/keyrings")
+	if err != nil {
+		return fmt.Errorf("failed to create keyrings directory: %v", err)
+	}
+	
+	// Download and convert key in one step
+	_, err = utils.RunShell(fmt.Sprintf("curl -fsSL 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x4F4EA0AAE5267A6C' | gpg --dearmor -o %s 2>/dev/null", keyringPath))
+	if err != nil {
+		utils.Warn("Failed to download key from keyserver, trying alternative method...")
+		// Try using apt-key as fallback (though deprecated)
+		_, err = utils.RunShell("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 4F4EA0AAE5267A6C 2>/dev/null || true")
+		if err != nil {
+			utils.Warn("Alternative key import also failed, continuing anyway...")
+		}
+	}
+	
+	// Verify key file was created
+	if utils.CheckFileExists(keyringPath) {
+		utils.Ok("PPA GPG key imported successfully")
+	} else {
+		utils.Warn("Key file not created, but continuing (may already be in apt-key)")
+	}
 
 	// Manually create the sources.list.d file with the mapped codename
 	// This is more reliable than add-apt-repository for unsupported versions
 	utils.Log("Adding PPA sources for Ubuntu %s...", ppaCodename)
-	sourcesLine := fmt.Sprintf("deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu %s main", ppaCodename)
+	
+	// Use modern signed-by syntax if we have the keyring file
+	var sourcesLine string
+	if utils.CheckFileExists(keyringPath) {
+		sourcesLine = fmt.Sprintf("deb [signed-by=%s] https://ppa.launchpadcontent.net/ondrej/php/ubuntu %s main", keyringPath, ppaCodename)
+	} else {
+		// Fallback to old method without signed-by (relies on apt-key)
+		sourcesLine = fmt.Sprintf("deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu %s main", ppaCodename)
+	}
+	
 	sourcesFile := "/etc/apt/sources.list.d/ondrej-ubuntu-php.list"
 	
 	_, err = utils.RunShell(fmt.Sprintf("echo '%s' > %s", sourcesLine, sourcesFile))
