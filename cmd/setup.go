@@ -41,12 +41,6 @@ func FullSetup(cfg *types.Config) error {
 		return err
 	}
 
-	// Set hostname
-	utils.Section("Hostname")
-	if err := system.SetProjectHostname(cfg.PrimaryDomain, cfg.VerifyOnly); err != nil {
-		return err
-	}
-
 	// Install base packages
 	utils.Section("Base Packages")
 	if err := system.EnsureBasePackages(cfg.VerifyOnly); err != nil {
