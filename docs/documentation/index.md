@@ -51,15 +51,6 @@ Complete reference for Simple VPS Provisioner.
 - Ubuntu 22.04 LTS (Jammy) - Fully supported ✅ (Most stable)
 - Ubuntu 20.04 LTS (Focal) - Fully supported ✅
 
-### Minimum VPS Requirements
-
-| Resource | Minimum | Recommended |
-|----------|---------|-------------|
-| CPU | 1 core | 2+ cores |
-| RAM | 1 GB | 2+ GB |
-| Storage | 10 GB | 20+ GB |
-| Network | IPv4 | IPv4 + IPv6 |
-
 ### Required Access
 
 - **Root access** (sudo privileges)

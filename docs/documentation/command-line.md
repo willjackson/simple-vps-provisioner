@@ -243,8 +243,8 @@ Creates three separate environments:
 PHP version to install.
 
 ```bash
--php-version 8.3  # Default
--php-version 8.4
+-php-version 8.4  # Default
+-php-version 8.3
 -php-version 8.2
 -php-version 8.1
 ```
@@ -255,8 +255,8 @@ sudo svp setup -cms drupal -domain example.com -php-version 8.4
 ```
 
 **Available versions:**
-- PHP 8.4 (latest)
-- PHP 8.3 (default, recommended)
+- PHP 8.4 (latest, default, recommended)
+- PHP 8.3
 - PHP 8.2
 - PHP 8.1
 
