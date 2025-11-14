@@ -7,7 +7,7 @@ Simple VPS Provisioner is a command-line tool that transforms a fresh Debian or 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](https://go.dev/)
 
-**📚 [Full Documentation](https://github.com/willjackson/simple-vps-provisioner#readme)**
+**📚 [Full Documentation](https://willjackson.github.io/simple-vps-provisioner/)**
 
 ---
 
@@ -142,21 +142,21 @@ For each site, svp configures:
 | `-git-branch` | Git branch (uses default if not specified) | - |
 | `-db` | Database file to import | - |
 
-[View all flags →](https://github.com/willjackson/simple-vps-provisioner#readme)
+[View all flags →](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line/)
 
 ---
 
 ## Documentation
 
-📖 **Full documentation available at: [github.com/willjackson/simple-vps-provisioner](https://github.com/willjackson/simple-vps-provisioner#readme)**
+📖 **Full documentation available at: [willjackson.github.io/simple-vps-provisioner](https://willjackson.github.io/simple-vps-provisioner/)**
 
 ### Quick Links
 
-- [Getting Started Guide](https://github.com/willjackson/simple-vps-provisioner#readme)
-- [Complete Documentation](https://github.com/willjackson/simple-vps-provisioner#readme)
-- [Examples & Use Cases](https://github.com/willjackson/simple-vps-provisioner#examples)
-- [Command-Line Reference](https://github.com/willjackson/simple-vps-provisioner#readme)
-- [Troubleshooting](https://github.com/willjackson/simple-vps-provisioner#troubleshooting)
+- [Getting Started Guide](https://willjackson.github.io/simple-vps-provisioner/getting-started/)
+- [Complete Documentation](https://willjackson.github.io/simple-vps-provisioner/documentation/)
+- [Examples & Use Cases](https://willjackson.github.io/simple-vps-provisioner/examples/)
+- [Command-Line Reference](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line/)
+- [Troubleshooting](https://willjackson.github.io/simple-vps-provisioner/documentation/troubleshooting/)
 
 ---
 
@@ -189,13 +189,13 @@ cd simple-vps-provisioner
 sudo bash install.sh
 ```
 
-[More installation options →](https://github.com/willjackson/simple-vps-provisioner#readme)
+[More installation options →](https://willjackson.github.io/simple-vps-provisioner/getting-started/)
 
 ---
 
 ## Support & Contributing
 
-- **📖 Documentation**: [github.com/willjackson/simple-vps-provisioner](https://github.com/willjackson/simple-vps-provisioner#readme)
+- **📖 Documentation**: [willjackson.github.io/simple-vps-provisioner](https://willjackson.github.io/simple-vps-provisioner/)
 - **🐛 Bug Reports**: [GitHub Issues](https://github.com/willjackson/simple-vps-provisioner/issues)
 - **💬 Discussions**: [GitHub Discussions](https://github.com/willjackson/simple-vps-provisioner/discussions)
 
@@ -224,13 +224,13 @@ sudo svp setup -cms wordpress -domain blog.com -git-repo https://github.com/me/b
 sudo svp setup -cms drupal -domain myapp.com -extra-domains "staging.myapp.com" -le-email dev@myapp.com
 ```
 
-[View more examples →](https://github.com/willjackson/simple-vps-provisioner#examples)
+[View more examples →](https://willjackson.github.io/simple-vps-provisioner/examples/)
 
 ---
 
 <div align="center">
 
-**[Get Started](https://github.com/willjackson/simple-vps-provisioner#quick-start) • [Documentation](https://github.com/willjackson/simple-vps-provisioner#readme) • [Examples](https://github.com/willjackson/simple-vps-provisioner#examples)**
+**[Get Started](https://willjackson.github.io/simple-vps-provisioner/getting-started/) • [Documentation](https://willjackson.github.io/simple-vps-provisioner/documentation/) • [Examples](https://willjackson.github.io/simple-vps-provisioner/examples/)**
 
 Made with ❤️ for the Drupal and WordPress communities
 
