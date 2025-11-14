@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"svp/pkg/ssl"
-	"svp/pkg/system"
 	"svp/pkg/utils"
+	"svp/pkg/web"
 	"svp/types"
 )
 
@@ -51,7 +51,7 @@ func enableSSL(domain, email string) error {
 		}
 
 		// Reload nginx
-		if err := system.ReloadNginx(); err != nil {
+		if err := web.ReloadNginx(); err != nil {
 			return err
 		}
 
