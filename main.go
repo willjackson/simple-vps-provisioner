@@ -55,6 +55,8 @@ func main() {
 		phpUpdateCommand()
 	case "update-ssl":
 		updateSSLCommand()
+	case "auth":
+		authCommand()
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", command)
 		showGeneralHelp()
@@ -75,6 +77,7 @@ func showGeneralHelp() {
 	fmt.Println("  update       Check for and install updates to svp")
 	fmt.Println("  php-update   Update PHP version for a specific domain")
 	fmt.Println("  update-ssl   Manage SSL certificates (enable, disable, renew, check)")
+	fmt.Println("  auth         Manage basic authentication (enable, disable, check)")
 	fmt.Println()
 	fmt.Println("Global Flags:")
 	fmt.Println("  --version     Show version information")
@@ -501,6 +504,102 @@ func updateSSLCommand() {
 	// Execute SSL update
 	if err := cmd.UpdateSSL(cfg); err != nil {
 		utils.Err("SSL management failed: %v", err)
+		os.Exit(1)
+	}
+}
+
+func authCommand() {
+	cfg := &types.Config{Mode: "auth"}
+	fs := flag.NewFlagSet("auth", flag.ExitOnError)
+
+	var action string
+	fs.StringVar(&action, "action", "", "Action to perform: enable, disable, or check")
+	fs.StringVar(&cfg.AuthUsername, "username", "", "Username for basic authentication")
+	fs.StringVar(&cfg.AuthPassword, "password", "", "Password for basic authentication")
+	fs.BoolVar(&cfg.Debug, "debug", false, "Enable debug mode")
+
+	fs.Usage = func() {
+		fmt.Printf("Simple VPS Provisioner (svp) v%s - Basic Authentication Command\n\n", version)
+		fmt.Println("Usage:")
+		fmt.Println("  svp auth DOMAIN ACTION [options]")
+		fmt.Println()
+		fmt.Println("Description:")
+		fmt.Println("  Manage basic authentication for a domain.")
+		fmt.Println()
+		fmt.Println("Arguments:")
+		fmt.Println("  DOMAIN")
+		fmt.Println("        Domain to manage authentication for (required)")
+		fmt.Println("  ACTION")
+		fmt.Println("        Action to perform (required)")
+		fmt.Println("        - enable:  Add or update basic authentication")
+		fmt.Println("        - disable: Remove basic authentication")
+		fmt.Println("        - check:   Show authentication status")
+		fmt.Println()
+		fmt.Println("Optional Flags:")
+		fmt.Println("  --username string")
+		fmt.Println("        Username for authentication (will prompt if not provided)")
+		fmt.Println("  --password string")
+		fmt.Println("        Password for authentication (will prompt if not provided)")
+		fmt.Println("  --debug")
+		fmt.Println("        Enable debug mode")
+		fmt.Println()
+		fmt.Println("Examples:")
+		fmt.Println("  # Enable authentication (interactive):")
+		fmt.Println("  svp auth example.com enable")
+		fmt.Println()
+		fmt.Println("  # Enable authentication with credentials:")
+		fmt.Println("  svp auth example.com enable --username admin --password secretpass")
+		fmt.Println()
+		fmt.Println("  # Check authentication status:")
+		fmt.Println("  svp auth example.com check")
+		fmt.Println()
+		fmt.Println("  # Disable authentication:")
+		fmt.Println("  svp auth example.com disable")
+		fmt.Println()
+		fmt.Println("Notes:")
+		fmt.Println("  - Only one username/password per domain is supported")
+		fmt.Println("  - Enabling auth again will replace the existing credentials")
+		fmt.Println("  - Changes take effect immediately after nginx reload")
+		fmt.Println()
+		fmt.Printf("Documentation: %s\n", documentationURL)
+	}
+
+	// Check if help is requested or arguments are missing
+	if len(os.Args) < 4 || os.Args[2] == "--help" || os.Args[2] == "-help" {
+		fs.Usage()
+		os.Exit(0)
+	}
+
+	// Parse domain and action from positional arguments
+	cfg.PrimaryDomain = os.Args[2]
+	action = os.Args[3]
+	cfg.AuthAction = action
+
+	// Parse flags from remaining arguments (skip command, domain, and action)
+	fs.Parse(os.Args[4:])
+
+	// Enable debug mode if requested
+	if cfg.Debug {
+		os.Setenv("DEBUG", "1")
+		fmt.Println("DEBUG MODE ENABLED")
+	}
+
+	// Validate action
+	validActions := map[string]bool{
+		"enable":  true,
+		"disable": true,
+		"check":   true,
+	}
+	if !validActions[action] {
+		utils.Err("Invalid action: %s", action)
+		fmt.Println("\nValid actions: enable, disable, check")
+		fmt.Println("Run 'svp auth --help' for more information")
+		os.Exit(1)
+	}
+
+	// Execute auth management
+	if err := cmd.Auth(cfg); err != nil {
+		utils.Err("Authentication management failed: %v", err)
 		os.Exit(1)
 	}
 }

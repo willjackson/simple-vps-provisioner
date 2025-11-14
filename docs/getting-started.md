@@ -129,6 +129,10 @@ sudo svp setup example.com \
   --cms drupal \
   --extra-domains "staging.example.com,dev.example.com" \
   --le-email admin@example.com
+
+# Optional: Password-protect staging/dev environments
+sudo svp auth staging.example.com enable
+sudo svp auth dev.example.com enable
 ```
 
 ### Import Existing Database
@@ -202,6 +206,60 @@ This will:
 - Keep the certificate in place (but not use it)
 - Stop automatic renewal
 
+## Password Protection with Basic Authentication
+
+Basic authentication provides a simple way to password-protect your sites. This is particularly useful for:
+- Staging and development environments
+- Sites under construction
+- Internal tools and dashboards
+- Preventing search engine indexing during development
+
+### Enable Authentication
+
+You can enable basic auth with interactive prompts:
+
+```bash
+sudo svp auth example.com enable
+```
+
+Or provide credentials directly via flags:
+
+```bash
+sudo svp auth example.com enable --username admin --password secure123
+```
+
+This will:
+- Install apache2-utils (if not already installed)
+- Create a password file using htpasswd
+- Update Nginx configuration to require authentication
+- Reload Nginx to apply changes
+
+### Check Authentication Status
+
+To see if authentication is enabled for a site:
+
+```bash
+sudo svp auth example.com check
+```
+
+This displays:
+- Whether basic auth is enabled or disabled
+- The username configured (if enabled)
+- Location of the password file
+
+### Disable Authentication
+
+To remove password protection:
+
+```bash
+sudo svp auth example.com disable
+```
+
+This will:
+- Update Nginx configuration to remove auth requirement
+- Keep the password file in place (but not use it)
+- Reload Nginx to apply changes
+
 ## Understanding the Output
 
 svp provides clear, color-coded output:
@@ -225,6 +283,7 @@ svp provides clear, color-coded output:
 - Certbot (optional, installed only when SSL is enabled via --le-email)
 - UFW firewall
 - WP-CLI (for WordPress)
+- apache2-utils (provides htpasswd for basic authentication)
 
 ### Directory Structure
 

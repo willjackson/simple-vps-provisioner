@@ -240,6 +240,88 @@ UFW is configured to allow SSH by default. If locked out:
 - Disable UFW: `sudo ufw disable`
 - Re-enable with SSH: `sudo ufw allow 22 && sudo ufw enable`
 
+---
+
+## Basic Authentication Issues
+
+### Site prompts for password unexpectedly
+
+**Problem:** Browser prompts for username/password when accessing site.
+
+**Solution:**
+Basic Authentication is enabled. Check status:
+```bash
+sudo svp auth example.com check
+```
+
+If you don't want authentication, disable it:
+```bash
+sudo svp auth example.com disable
+```
+
+### Can't log in with credentials
+
+**Problem:** Username/password doesn't work.
+
+**Causes & Solutions:**
+
+1. **Wrong credentials**
+   - Double-check username and password
+   - Passwords are case-sensitive
+
+2. **Need to reset credentials**
+   ```bash
+   # Re-enable with new credentials
+   sudo svp auth example.com enable \
+     --username newuser \
+     --password newpassword
+   ```
+
+3. **Check .htpasswd file exists**
+   ```bash
+   ls -la /var/www/example.com/.htpasswd
+   sudo cat /var/www/example.com/.htpasswd
+   ```
+
+### Authentication not working after enabling
+
+**Problem:** Enabled auth but site still accessible without password.
+
+**Solution:**
+
+1. Verify authentication is enabled:
+   ```bash
+   sudo svp auth example.com check
+   ```
+
+2. Check Nginx configuration:
+   ```bash
+   sudo cat /etc/nginx/sites-available/example.com.conf | grep auth_basic
+   ```
+
+3. Reload Nginx:
+   ```bash
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+4. Clear browser cache or try incognito mode
+
+### Remove authentication completely
+
+**Problem:** Need to remove all authentication.
+
+**Solution:**
+```bash
+# Disable authentication
+sudo svp auth example.com disable
+
+# Verify it's removed
+sudo svp auth example.com check
+
+# Should show: Authentication is not enabled
+```
+
 ## CMS-Specific Issues
 
 ### Drupal: "Settings file is not writable"

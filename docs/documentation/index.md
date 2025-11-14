@@ -18,6 +18,7 @@ Complete reference for Simple VPS Provisioner.
 ### Core Features
 - [CMS Installation](cms-installation)
 - [SSL/HTTPS Configuration](ssl-configuration)
+- [Basic Authentication](security#basic-authentication-for-sites)
 - [Multi-Domain Setup](multi-domain)
 - [Git Deployment](git-deployment)
 - [Database Management](database-management)

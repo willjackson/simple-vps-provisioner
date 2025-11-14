@@ -53,6 +53,15 @@ type Config struct {
 	// SSL action for update-ssl command: enable, disable, renew, check
 	SSLAction string
 
+	// Auth action for auth command: enable, disable, check
+	AuthAction string
+
+	// Auth username for basic authentication
+	AuthUsername string
+
+	// Auth password for basic authentication
+	AuthPassword string
+
 	// Switch all sites to new PHP version
 	SwitchAll bool
 

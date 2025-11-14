@@ -18,6 +18,7 @@ With a single command, svp provisions your entire server stack:
 - ✅ **Database**: MariaDB with automatic setup
 - ✅ **SSL/HTTPS**: Let's Encrypt certificates with auto-renewal
 - ✅ **Security**: UFW firewall, hardened PHP settings, secure credentials
+- ✅ **Basic Auth**: Password-protect staging/dev sites
 - ✅ **CMS**: Complete Drupal or WordPress installation
 - ✅ **Git Deploy**: Clone and deploy from repositories
 - ✅ **Multi-Domain**: Support for multiple sites on one server
@@ -106,6 +107,10 @@ sudo svp setup mysite.com \
   --cms drupal \
   --extra-domains "staging.mysite.com,dev.mysite.com" \
   --le-email admin@mysite.com
+
+# Password-protect non-production environments
+sudo svp auth staging.mysite.com enable
+sudo svp auth dev.mysite.com enable
 ```
 
 ### WordPress with Existing Database
@@ -134,6 +139,7 @@ sudo svp setup myblog.com \
 | **CMS Support** | Drupal and WordPress ready |
 | **SSL/HTTPS** | Let's Encrypt certificates (enabled with --le-email) |
 | **Security** | Firewall, hardening, secure defaults |
+| **Basic Auth** | Password-protect sites with one command |
 | **Multi-Domain** | Multiple sites per server |
 | **Git Deploy** | Clone from repositories |
 | **PHP Versions** | Choose 8.1, 8.2, 8.3, or 8.4 |

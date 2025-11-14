@@ -97,6 +97,16 @@ sudo svp setup example.com \
 - `staging.example.com` - Separate certificate
 - `dev.example.com` - Separate certificate
 
+**Tip:** Combine SSL with Basic Authentication to secure non-production environments:
+
+```bash
+# Password-protect staging while keeping SSL
+sudo svp auth staging.example.com enable
+sudo svp auth dev.example.com enable
+```
+
+This gives you both HTTPS encryption and password protection for staging/dev sites.
+
 ---
 
 ## Certificate Management

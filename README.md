@@ -19,6 +19,7 @@ Simple VPS Provisioner is a command-line tool that transforms a fresh Debian or 
 - ✅ **Multi-Domain** - Multiple sites on one server
 - ✅ **Git Deployment** - Clone and deploy from repositories
 - ✅ **Optional SSL** - Let's Encrypt with auto-renewal (opt-in via --le-email)
+- ✅ **Basic Authentication** - Password-protect sites with HTTP basic auth
 - ✅ **Security First** - Firewall, hardening, isolation
 - ✅ **Idempotent** - Safe to run multiple times
 
@@ -113,6 +114,9 @@ sudo svp update
 # Update SSL certificates (check renewal or enable SSL)
 sudo svp update-ssl example.com check
 
+# Check basic authentication status
+sudo svp auth example.com check
+
 # View help
 svp
 ```
@@ -181,6 +185,63 @@ sudo svp setup example.com --cms drupal --le-email admin@example.com
 ```
 
 Certificates are automatically renewed via a cron job.
+
+---
+
+## Basic Authentication
+
+### Password-Protect Your Site
+
+Add an extra layer of security by requiring username/password authentication to access your site. This is useful for staging environments, development sites, or restricting access to specific content.
+
+### Enable Authentication
+
+```bash
+# Enable with interactive prompts
+sudo svp auth example.com enable
+
+# Or provide credentials via flags
+sudo svp auth example.com enable --username admin --password securepass123
+```
+
+The `auth` command automatically installs `apache2-utils` (htpasswd) if not already present. Changes take effect immediately.
+
+### Check Authentication Status
+
+```bash
+# View current authentication status
+sudo svp auth example.com check
+```
+
+This shows whether authentication is enabled and which username is configured.
+
+### Update Credentials
+
+To change the username or password, simply enable authentication again with new credentials:
+
+```bash
+# Replace existing credentials
+sudo svp auth example.com enable --username newuser --password newpass456
+```
+
+This replaces the existing authentication configuration. Only one username/password pair is supported per domain.
+
+### Disable Authentication
+
+```bash
+# Remove authentication requirement
+sudo svp auth example.com disable
+```
+
+This removes the password protection and makes the site publicly accessible again.
+
+### Important Notes
+
+- Only one username/password combination per domain
+- Credentials can be provided via `--username` and `--password` flags or entered interactively
+- Changes take effect immediately (no server restart required)
+- Re-enabling authentication replaces existing credentials
+- Works with both HTTP and HTTPS sites
 
 ---
 

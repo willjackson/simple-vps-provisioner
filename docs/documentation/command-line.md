@@ -184,6 +184,62 @@ sudo svp update-ssl example.com check
 
 **Note:** The `enable` action requires `--le-email` to obtain a certificate.
 
+### Basic Authentication Command
+
+Manage HTTP Basic Authentication for a domain.
+
+```bash
+svp auth DOMAIN ACTION [options]
+```
+
+**Actions:**
+- `enable` - Enable Basic Authentication with username/password
+- `disable` - Disable Basic Authentication and remove credentials
+- `check` - Check if Basic Authentication is enabled for the domain
+
+**What it does:**
+- Enables or disables HTTP Basic Authentication for an existing domain
+- Automatically installs apache2-utils (for htpasswd) if not present
+- Creates and manages .htpasswd files for credential storage
+- Updates Nginx configuration to enforce authentication
+- Changes take effect immediately without restart
+- Supports only one username/password pair per domain
+
+**Credential Input:**
+- Interactive: Prompts for username and password when not provided
+- Flag-based: Use `--username` and `--password` flags for non-interactive setup
+- Passwords are securely hashed using bcrypt
+
+**Examples:**
+
+Enable Basic Authentication with interactive credentials:
+```bash
+sudo svp auth example.com enable
+# Prompts for username and password
+```
+
+Enable Basic Authentication with flags:
+```bash
+sudo svp auth example.com enable --username admin --password secretpass123
+```
+
+Check authentication status:
+```bash
+sudo svp auth example.com check
+```
+
+Disable Basic Authentication:
+```bash
+sudo svp auth example.com disable
+```
+
+**Important Notes:**
+- Only one username/password combination per domain is supported
+- Enabling authentication again will replace the existing credentials
+- The .htpasswd file is stored in the site's directory
+- Authentication applies to the entire domain
+- apache2-utils package is automatically installed if needed
+
 ---
 
 ## Global Flags
@@ -679,6 +735,31 @@ sudo svp update-ssl example.com disable
 
 ```bash
 sudo svp update-ssl example.com renew
+```
+
+### Enable Basic Authentication (Interactive)
+
+```bash
+sudo svp auth example.com enable
+# You will be prompted to enter username and password
+```
+
+### Enable Basic Authentication (Non-Interactive)
+
+```bash
+sudo svp auth example.com enable --username admin --password mySecurePass123
+```
+
+### Check Authentication Status
+
+```bash
+sudo svp auth example.com check
+```
+
+### Disable Basic Authentication
+
+```bash
+sudo svp auth example.com disable
 ```
 
 ---

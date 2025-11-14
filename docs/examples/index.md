@@ -166,6 +166,85 @@ cd /var/www/dev.mysite.com
 sudo -u admin git checkout feature/new-feature
 ```
 
+**Protect non-production with Basic Auth:**
+```bash
+# Password-protect staging
+sudo svp auth staging.mysite.com enable \
+  --username team \
+  --password stagingPass2024
+
+# Password-protect dev
+sudo svp auth dev.mysite.com enable \
+  --username dev \
+  --password devPass2024
+```
+
+---
+
+### Password-Protected Staging Site
+
+Set up a staging environment with Basic Authentication to prevent public access:
+
+```bash
+# Step 1: Provision staging site with SSL
+sudo svp setup staging.mysite.com \
+  --cms drupal \
+  --git-repo git@github.com:mycompany/mysite.git \
+  --git-branch develop \
+  --le-email admin@mysite.com
+
+# Step 2: Enable Basic Authentication
+sudo svp auth staging.mysite.com enable \
+  --username client \
+  --password previewAccess2024
+```
+
+**What you get:**
+- ✅ Staging site accessible via HTTPS
+- ✅ Password protection for entire site
+- ✅ Secure credentials with bcrypt hashing
+- ✅ Easy to share with clients or team
+
+**Common scenarios:**
+
+**Client Preview:**
+```bash
+# Set up preview site
+sudo svp setup preview.mysite.com \
+  --cms drupal \
+  --db /path/to/production-backup.sql.gz \
+  --le-email admin@mysite.com
+
+# Protect with auth
+sudo svp auth preview.mysite.com enable \
+  --username client \
+  --password ClientView123
+
+# Share with client:
+# URL: https://preview.mysite.com
+# Username: client
+# Password: ClientView123
+```
+
+**Development Environment:**
+```bash
+# Set up dev site
+sudo svp setup dev.mysite.com --cms drupal
+
+# Enable authentication interactively
+sudo svp auth dev.mysite.com enable
+# Prompts for username and password
+
+# Check if enabled
+sudo svp auth dev.mysite.com check
+```
+
+**Remove Protection When Ready:**
+```bash
+# Disable auth when moving to production
+sudo svp auth staging.mysite.com disable
+```
+
 ---
 
 ## Development Workflows

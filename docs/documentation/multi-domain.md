@@ -86,6 +86,10 @@ sudo svp setup myapp.com \
   --extra-domains "staging.myapp.com,dev.myapp.com" \
   --git-repo https://github.com/company/myapp.git \
   --le-email devops@company.com
+
+# Password-protect non-production environments
+sudo svp auth staging.myapp.com enable --username team --password stagingPass
+sudo svp auth dev.myapp.com enable --username dev --password devPass
 ```
 
 **Workflow:**
@@ -94,10 +98,12 @@ sudo svp setup myapp.com \
    - Feature branch testing
    - Rapid iteration
    - Latest code
+   - Password-protected from public
 
 2. **Staging** (`staging.myapp.com`)
    - Pre-production testing
    - QA environment
+   - Password-protected for client previews
    - Mirror of production data
 
 3. **Production** (`myapp.com`)
