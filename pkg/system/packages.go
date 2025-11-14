@@ -152,18 +152,54 @@ func AddPHPRepoIfNeeded(verifyOnly bool) error {
 func addPHPRepoUbuntu() error {
 	utils.Log("Adding Sury PHP PPA for Ubuntu...")
 
+	// Get current codename to check if it's supported
+	codename, err := utils.RunShell("lsb_release -sc")
+	if err != nil {
+		return fmt.Errorf("failed to get codename: %v", err)
+	}
+	codename = strings.TrimSpace(codename)
+
+	// Map to supported Ubuntu codename for PPA
+	ppaCodename := getSupportedPPACodename(codename)
+	if ppaCodename != codename {
+		utils.Warn("Ubuntu %s not yet supported by PPA, using %s packages", codename, ppaCodename)
+	}
+
 	// Ensure software-properties-common is installed (provides add-apt-repository)
 	utils.Log("Installing software-properties-common...")
-	_, err := utils.RunCommand("apt-get", "install", "-y", "software-properties-common")
+	_, err = utils.RunCommand("apt-get", "install", "-y", "software-properties-common")
 	if err != nil {
 		return fmt.Errorf("failed to install software-properties-common: %v", err)
 	}
 
-	// Add the PPA using add-apt-repository
-	utils.Log("Adding PPA: ppa:ondrej/php...")
-	_, err = utils.RunCommand("add-apt-repository", "-y", "ppa:ondrej/php")
+	// Import PPA GPG key first
+	utils.Log("Importing PPA GPG key...")
+	_, err = utils.RunShell("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 14AA40EC0831756756D7F66C4F4EA0AAE5267A6C")
 	if err != nil {
-		return fmt.Errorf("failed to add PPA: %v\n\nTroubleshooting:\n  1. Check network: ping ppa.launchpad.net\n  2. Verify PPA exists: https://launchpad.net/~ondrej/+archive/ubuntu/php\n  3. Try manual: sudo add-apt-repository ppa:ondrej/php", err)
+		utils.Warn("Failed to import key via apt-key (deprecated), trying gpg method...")
+		// Try alternative method with gpg
+		_, err = utils.RunShell("gpg --keyserver keyserver.ubuntu.com --recv-keys 14AA40EC0831756756D7F66C4F4EA0AAE5267A6C && gpg --export 14AA40EC0831756756D7F66C4F4EA0AAE5267A6C | apt-key add -")
+		if err != nil {
+			utils.Warn("Failed to import GPG key, continuing anyway (may be already present)")
+		}
+	}
+
+	// Manually create the sources.list.d file with the mapped codename
+	// This is more reliable than add-apt-repository for unsupported versions
+	utils.Log("Adding PPA sources for Ubuntu %s...", ppaCodename)
+	sourcesLine := fmt.Sprintf("deb https://ppa.launchpadcontent.net/ondrej/php/ubuntu %s main", ppaCodename)
+	sourcesFile := "/etc/apt/sources.list.d/ondrej-ubuntu-php.list"
+	
+	_, err = utils.RunShell(fmt.Sprintf("echo '%s' > %s", sourcesLine, sourcesFile))
+	if err != nil {
+		return fmt.Errorf("failed to create PPA sources file: %v", err)
+	}
+
+	// Also add the source repository (deb-src)
+	sourcesLineSrc := fmt.Sprintf("# deb-src https://ppa.launchpadcontent.net/ondrej/php/ubuntu %s main", ppaCodename)
+	_, err = utils.RunShell(fmt.Sprintf("echo '%s' >> %s", sourcesLineSrc, sourcesFile))
+	if err != nil {
+		utils.Warn("Failed to add deb-src line: %v", err)
 	}
 
 	// Update package lists
@@ -318,4 +354,30 @@ func getSupportedSuryCodenameDebian(codename string) string {
 	
 	// Unknown - default to bookworm
 	return "bookworm"
+}
+
+// getSupportedPPACodename maps Ubuntu codenames to PPA-supported versions
+func getSupportedPPACodename(codename string) string {
+	supportedUbuntuCodenames := map[string]string{
+		// Supported LTS versions (PPA has these)
+		"noble":  "noble",  // Ubuntu 24.04 LTS
+		"jammy":  "jammy",  // Ubuntu 22.04 LTS
+		"focal":  "focal",  // Ubuntu 20.04 LTS
+		"bionic": "bionic", // Ubuntu 18.04 LTS
+		
+		// Interim/development releases - map to latest LTS
+		"oracular": "noble",    // Ubuntu 24.10 -> use 24.04 LTS
+		"plucky":   "noble",    // Ubuntu 25.04 -> use 24.04 LTS
+		"questing": "noble",    // Ubuntu 25.10 -> use 24.04 LTS
+		"mantic":   "jammy",    // Ubuntu 23.10 -> use 22.04 LTS
+		"lunar":    "jammy",    // Ubuntu 23.04 -> use 22.04 LTS
+		"kinetic":  "jammy",    // Ubuntu 22.10 -> use 22.04 LTS
+	}
+	
+	if mapped, ok := supportedUbuntuCodenames[codename]; ok {
+		return mapped
+	}
+	
+	// Unknown Ubuntu version - default to noble (24.04 LTS) as it's the latest LTS
+	return "noble"
 }
