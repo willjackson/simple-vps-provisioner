@@ -223,7 +223,7 @@ func addPHPRepoUbuntu() error {
 	// Also check for generic ppa files that might contain ondrej/php
 	_, _ = utils.RunShell("grep -l 'ondrej/php' /etc/apt/sources.list.d/*.list 2>/dev/null | xargs rm -f 2>/dev/null || true")
 	// Remove from main sources.list if present (shouldn't be, but just in case)
-	_, _ = utils.RunShell("sed -i '/ondrej\/php/d' /etc/apt/sources.list 2>/dev/null || true")
+	_, _ = utils.RunShell(`sed -i '/ondrej\/php/d' /etc/apt/sources.list 2>/dev/null || true`)
 
 	// Import PPA GPG key using modern method
 	utils.Log("Importing PPA GPG key...")
