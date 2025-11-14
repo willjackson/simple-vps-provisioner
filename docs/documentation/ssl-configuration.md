@@ -127,7 +127,7 @@ Certificates auto-renew, but you can force renewal:
 
 ```bash
 # Renew using update-ssl (recommended)
-sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+sudo svp update-ssl example.com renew
 
 # Or using certbot directly
 # Renew specific certificate
@@ -166,7 +166,7 @@ sudo systemctl list-timers certbot.timer
 Update or enable SSL certificates for existing sites using the `update-ssl` command:
 
 ```bash
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 ```
 
 **What it does:**
@@ -175,16 +175,19 @@ sudo svp update-ssl example.com --le-email admin@example.com
 - Sets up HTTP to HTTPS redirect
 - Configures secure SSL settings
 
-**Options:**
+**Examples:**
 ```bash
 # Enable SSL for a site
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 
-# Force renewal of existing certificate
-sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+# Check SSL status
+sudo svp update-ssl example.com check
 
-# Use staging environment (for testing)
-sudo svp update-ssl example.com --le-email admin@example.com --staging
+# Renew SSL certificate
+sudo svp update-ssl example.com renew
+
+# Disable SSL
+sudo svp update-ssl example.com disable
 ```
 
 ### Adding SSL After Initial Setup
@@ -193,7 +196,7 @@ If you initially set up without SSL, you can add it later using either method:
 
 **Method 1: Using update-ssl command (recommended)**
 ```bash
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 ```
 
 **Method 2: Using certbot directly**
@@ -299,7 +302,7 @@ server {
 
 **Solution:** Use the update-ssl command to retry:
 ```bash
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 ```
 
 ### Rate Limit Errors
@@ -309,13 +312,10 @@ sudo svp update-ssl example.com --le-email admin@example.com
 **Solution:**
 Let's Encrypt limits to 5 certificates per domain per week.
 
-Wait 7 days or use staging environment for testing:
+Wait 7 days or use staging environment for testing with certbot:
 
 ```bash
-# Using update-ssl with staging
-sudo svp update-ssl example.com --le-email admin@example.com --staging
-
-# Or using certbot directly
+# Use certbot with staging for testing
 sudo certbot --nginx -d example.com --staging
 ```
 
@@ -329,7 +329,7 @@ sudo certbot certificates
 If expired, renew:
 ```bash
 # Using update-ssl (recommended)
-sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+sudo svp update-ssl example.com renew
 
 # Or using certbot directly
 sudo certbot renew --force-renewal
@@ -492,7 +492,7 @@ Convert HTTP to HTTPS:
 1. Configure DNS to point to server
 2. Enable SSL using update-ssl:
    ```bash
-   sudo svp update-ssl example.com --le-email admin@example.com
+   sudo svp update-ssl example.com enable --le-email admin@example.com
    ```
 
    Or using certbot directly:

@@ -54,9 +54,9 @@ sudo bash install.sh
 
 3. **Rate limiting**
    - Let's Encrypt has rate limits (5 certs/week per domain)
-   - Wait 7 days or use staging environment for testing:
+   - Wait 7 days or use certbot staging for testing:
    ```bash
-   sudo svp update-ssl example.com --le-email admin@example.com --staging
+   sudo certbot --nginx -d example.com --staging
    ```
 
 4. **Invalid email**
@@ -70,7 +70,7 @@ sudo bash install.sh
 **Solution 1: Use update-ssl command (recommended)**
 ```bash
 # Retry SSL setup for existing site
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 ```
 
 **Solution 2: Manual approach**
@@ -91,7 +91,7 @@ sudo svp setup example.com --cms drupal --le-email admin@example.com
 **Solution:**
 ```bash
 # Use update-ssl command
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 
 # This will:
 # 1. Obtain Let's Encrypt certificate
@@ -105,8 +105,8 @@ sudo svp update-ssl example.com --le-email admin@example.com
 
 **Solution:**
 ```bash
-# Force renewal using update-ssl
-sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+# Renew using update-ssl
+sudo svp update-ssl example.com renew
 
 # Or check auto-renewal status
 sudo systemctl status certbot.timer

@@ -185,7 +185,9 @@ svp respects these environment variables:
 
 Enable debug output:
 ```bash
-DEBUG=1 svp --mode setup example.com --cms drupal
+DEBUG=1 svp setup example.com --cms drupal
+# or use the --debug flag:
+svp setup example.com --cms drupal --debug
 ```
 
 Shows detailed command execution and troubleshooting information.

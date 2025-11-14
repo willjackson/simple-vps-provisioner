@@ -24,9 +24,8 @@ Real-world examples and common use cases for Simple VPS Provisioner.
 The simplest way to get started with a new Drupal site:
 
 ```bash
-sudo svp setup \
+sudo svp setup mysite.com \
   --cms drupal \
-  --domain mysite.com \
   --le-email admin@mysite.com
 ```
 
@@ -49,9 +48,8 @@ sudo svp setup \
 ### Fresh WordPress Site
 
 ```bash
-sudo svp setup \
+sudo svp setup myblog.com \
   --cms wordpress \
-  --domain myblog.com \
   --le-email admin@myblog.com
 ```
 
@@ -431,7 +429,7 @@ rsync -avz --delete \
 
 ```bash
 # Add SSL using update-ssl command
-sudo svp update-ssl mysite.com --le-email admin@mysite.com
+sudo svp update-ssl mysite.com enable --le-email admin@mysite.com
 ```
 
 #### Step 6: Switch DNS
@@ -470,20 +468,23 @@ Add or update SSL certificates for existing sites:
 
 ```bash
 # Enable SSL on a site that was set up without it
-sudo svp update-ssl mysite.com --le-email admin@mysite.com
+sudo svp update-ssl mysite.com enable --le-email admin@mysite.com
 
-# Force renewal of an existing certificate
-sudo svp update-ssl mysite.com --le-email admin@mysite.com --force-renewal
+# Check SSL certificate status
+sudo svp update-ssl mysite.com check
 
-# Test with Let's Encrypt staging environment
-sudo svp update-ssl mysite.com --le-email admin@mysite.com --staging
+# Renew an existing certificate
+sudo svp update-ssl mysite.com renew
+
+# Disable SSL
+sudo svp update-ssl mysite.com disable
 ```
 
 **Common use cases:**
 - Adding SSL to a site initially set up without it
-- Renewing certificates that failed to auto-renew
-- Testing SSL setup before using production certificates
-- Updating SSL configuration after server changes
+- Checking certificate status and expiration
+- Manually renewing certificates if needed
+- Disabling SSL to switch back to HTTP
 
 ---
 
@@ -588,7 +589,7 @@ dig +short mysite.com
 sudo svp setup mysite.com --cms drupal
 
 # Add SSL later using update-ssl
-sudo svp update-ssl mysite.com --le-email admin@mysite.com
+sudo svp update-ssl mysite.com enable --le-email admin@mysite.com
 
 # Or using certbot directly
 sudo certbot --nginx -d mysite.com --non-interactive --agree-tos --email admin@mysite.com
@@ -639,13 +640,13 @@ Result:
 
 ```bash
 # Step 1: Test HTTP (omit --le-email)
-sudo svp setup --cms drupal --domain example.com
+sudo svp setup example.com --cms drupal
 
 # Step 2: Verify site works
 curl -I http://example.com
 
 # Step 3: Add SSL using update-ssl
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 
 # Or using certbot directly
 sudo certbot --nginx -d example.com

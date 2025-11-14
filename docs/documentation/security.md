@@ -772,10 +772,13 @@ For sites without SSL or to renew certificates:
 
 ```bash
 # Enable SSL for a site
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 
-# Force renewal
-sudo svp update-ssl example.com --le-email admin@example.com --force-renewal
+# Check SSL status
+sudo svp update-ssl example.com check
+
+# Renew certificate
+sudo svp update-ssl example.com renew
 ```
 
 ### Port Scanning

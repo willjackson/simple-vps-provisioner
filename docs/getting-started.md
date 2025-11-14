@@ -163,7 +163,7 @@ You can enable, check, renew, or disable SSL at any time using the `update-ssl` 
 If you created a site without SSL, you can enable it later:
 
 ```bash
-sudo svp update-ssl example.com --le-email admin@example.com
+sudo svp update-ssl example.com enable --le-email admin@example.com
 ```
 
 This will:
@@ -177,7 +177,7 @@ This will:
 To see the current SSL status for a site:
 
 ```bash
-sudo svp update-ssl example.com --check
+sudo svp update-ssl example.com check
 ```
 
 This displays:
@@ -190,7 +190,7 @@ This displays:
 Certificates renew automatically, but you can manually renew:
 
 ```bash
-sudo svp update-ssl example.com --renew
+sudo svp update-ssl example.com renew
 ```
 
 ### Disable SSL
@@ -198,7 +198,7 @@ sudo svp update-ssl example.com --renew
 To remove SSL and revert to HTTP only:
 
 ```bash
-sudo svp update-ssl example.com --disable
+sudo svp update-ssl example.com disable
 ```
 
 This will:

@@ -486,7 +486,7 @@ Features:
 
 **1. Test on staging:**
 ```bash
-sudo svp php-update --domain staging.example.com --php-version 8.3
+sudo svp php-update staging.example.com --php-version 8.3
 ```
 
 **2. Test application:**
@@ -496,7 +496,7 @@ sudo svp php-update --domain staging.example.com --php-version 8.3
 
 **3. Update production:**
 ```bash
-sudo svp php-update --domain example.com --php-version 8.3
+sudo svp php-update example.com --php-version 8.3
 ```
 
 **4. Monitor:**
@@ -507,7 +507,7 @@ sudo tail -f /var/log/php8.3-fpm-example.com-error.log
 ### Rollback if Needed
 
 ```bash
-sudo svp php-update --domain example.com --php-version 8.2
+sudo svp php-update example.com --php-version 8.2
 ```
 
 ---
