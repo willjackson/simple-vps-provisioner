@@ -58,12 +58,23 @@ func InstallDrupal(domain, webroot, gitRepo, gitBranch, drupalRoot, docroot stri
 
 	// Check if Git repo is specified
 	if gitRepo != "" {
-		utils.Log("Cloning Git repository: %s (branch: %s)", gitRepo, gitBranch)
+		if gitBranch != "" {
+			utils.Log("Cloning Git repository: %s (branch: %s)", gitRepo, gitBranch)
+		} else {
+			utils.Log("Cloning Git repository: %s (default branch)", gitRepo)
+		}
 
 		// Clone repository as admin user
 		// CD to webroot first to avoid getcwd issues after directory deletion
 		if !utils.CheckDirExists(filepath.Join(domainDir, ".git")) {
-			_, err := utils.RunShell(fmt.Sprintf("cd %s && sudo -u %s git clone -b %s %s %s", webroot, adminUser, gitBranch, gitRepo, domainDir))
+			var cloneCmd string
+			if gitBranch != "" {
+				cloneCmd = fmt.Sprintf("cd %s && sudo -u %s git clone -b %s %s %s", webroot, adminUser, gitBranch, gitRepo, domainDir)
+			} else {
+				// No branch specified - use repository default
+				cloneCmd = fmt.Sprintf("cd %s && sudo -u %s git clone %s %s", webroot, adminUser, gitRepo, domainDir)
+			}
+			_, err := utils.RunShell(cloneCmd)
 			if err != nil {
 				return false, fmt.Errorf("failed to clone repository: %v", err)
 			}

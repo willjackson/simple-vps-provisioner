@@ -24,7 +24,7 @@ Real-world examples and common use cases for Simple VPS Provisioner.
 The simplest way to get started with a new Drupal site:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -le-email admin@mysite.com
@@ -49,7 +49,7 @@ sudo svp -mode setup \
 ### Fresh WordPress Site
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms wordpress \
   -domain myblog.com \
   -le-email admin@myblog.com
@@ -77,7 +77,7 @@ https://myblog.com/wp-admin/install.php
 Deploy an existing Drupal site from GitHub:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain production.mysite.com \
   -git-repo git@github.com:mycompany/mysite.git \
@@ -108,7 +108,7 @@ mysite/
 Migrate a site with an existing database:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -git-repo git@github.com:mycompany/mysite.git \
@@ -139,7 +139,7 @@ rsync -avz user@old-server:/var/www/mysite/web/sites/default/files/ \
 Production, staging, and development on one server:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -extra-domains "staging.mysite.com,dev.mysite.com" \
@@ -196,7 +196,7 @@ git push origin main
 #### Step 3: Deploy to VPS
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -git-repo https://github.com/mycompany/mysite.git \
@@ -229,7 +229,7 @@ rsync -avz ~/Sites/mysite/web/sites/default/files/ \
 Test a feature branch on a dedicated environment:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain feature-xyz.mysite.com \
   -git-repo git@github.com:mycompany/mysite.git \
@@ -285,7 +285,7 @@ scp mysite-db.sql.gz admin@vps-ip:/home/admin/
 
 ```bash
 # On VPS
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -db /home/admin/mysite-db.sql.gz \
@@ -317,7 +317,7 @@ Using rsync for minimal downtime:
 #### Step 1: Provision New Server
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -ssl=false
@@ -358,7 +358,7 @@ rsync -avz --delete \
 #### Step 5: Enable SSL
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -le-email admin@mysite.com
@@ -377,7 +377,7 @@ Update DNS to point to new server.
 Use PHP 8.4 for latest features:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -php-version 8.4 \
@@ -389,7 +389,7 @@ sudo svp -mode setup \
 Upgrade existing site:
 
 ```bash
-sudo svp -mode php-update \
+sudo svp php-update \
   -domain mysite.com \
   -php-version 8.4
 ```
@@ -410,7 +410,7 @@ monorepo/
 ```
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -git-repo https://github.com/mycompany/monorepo.git \
@@ -425,7 +425,7 @@ sudo svp -mode setup \
 For internal tools without SSL:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain internal.mycompany.local \
   -ssl=false \
@@ -439,7 +439,7 @@ sudo svp -mode setup \
 Non-standard docroot:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -docroot "public_html" \
@@ -453,7 +453,7 @@ sudo svp -mode setup \
 ### Basic WordPress
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms wordpress \
   -domain myblog.com \
   -le-email admin@myblog.com
@@ -462,7 +462,7 @@ sudo svp -mode setup \
 ### WordPress from Git
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms wordpress \
   -domain myblog.com \
   -git-repo https://github.com/mycompany/wp-site.git \
@@ -472,7 +472,7 @@ sudo svp -mode setup \
 ### WordPress with Database Import
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms wordpress \
   -domain myblog.com \
   -db /home/admin/wp-backup.sql.gz \
@@ -499,7 +499,7 @@ dig +short mysite.com
 123.45.67.89
 
 # Test without SSL first
-sudo svp -mode setup -cms drupal -domain mysite.com -ssl=false
+sudo svp setup -cms drupal -domain mysite.com -ssl=false
 
 # Add SSL later
 sudo certbot --nginx -d mysite.com --non-interactive --agree-tos --email admin@mysite.com
@@ -512,7 +512,7 @@ sudo certbot --nginx -d mysite.com --non-interactive --agree-tos --email admin@m
 Clean slate with new credentials:
 
 ```bash
-sudo svp -mode setup -cms drupal -domain mysite.com
+sudo svp setup -cms drupal -domain mysite.com
 ```
 
 When prompted:
@@ -533,7 +533,7 @@ Result:
 Keep credentials, clear tables:
 
 ```bash
-sudo svp -mode setup -cms drupal -domain mysite.com -keep-existing-db
+sudo svp setup -cms drupal -domain mysite.com -keep-existing-db
 ```
 
 Result:
@@ -550,7 +550,7 @@ Result:
 
 ```bash
 # Step 1: Test HTTP
-sudo svp -mode setup -cms drupal -domain example.com -ssl=false
+sudo svp setup -cms drupal -domain example.com -ssl=false
 
 # Step 2: Verify site works
 curl -I http://example.com
@@ -568,7 +568,7 @@ sudo certbot --nginx -d example.com
 # - Team collaboration
 # - CI/CD integration
 
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -git-repo git@github.com:company/site.git \
@@ -579,7 +579,7 @@ sudo svp -mode setup \
 
 ```bash
 # Never mix production and development
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -extra-domains "staging.example.com"

@@ -7,7 +7,7 @@ Simple VPS Provisioner is a command-line tool that transforms a fresh Debian or 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](https://go.dev/)
 
-**📚 [Full Documentation](https://willjackson.github.io/simple-vps-provisioner/)**
+**📚 [Full Documentation](https://github.com/willjackson/simple-vps-provisioner#readme)**
 
 ---
 
@@ -36,12 +36,12 @@ curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/
 
 **Drupal:**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -le-email admin@example.com
+sudo svp setup -cms drupal -domain example.com -le-email admin@example.com
 ```
 
 **WordPress:**
 ```bash
-sudo svp -mode setup -cms wordpress -domain example.com -le-email admin@example.com
+sudo svp setup -cms wordpress -domain example.com -le-email admin@example.com
 ```
 
 That's it! Visit `https://example.com` 🎉
@@ -61,7 +61,7 @@ That's it! Visit `https://example.com` 🎉
 ### Deploy from Git Repository
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -git-repo https://github.com/yourorg/yoursite.git \
@@ -71,7 +71,7 @@ sudo svp -mode setup \
 ### Multiple Environments
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -extra-domains "staging.example.com,dev.example.com" \
@@ -81,7 +81,7 @@ sudo svp -mode setup \
 ### Import Existing Database
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -db /path/to/backup.sql.gz \
@@ -91,7 +91,7 @@ sudo svp -mode setup \
 ### Update PHP Version
 
 ```bash
-sudo svp -mode php-update -domain example.com -php-version 8.4
+sudo svp php-update -domain example.com -php-version 8.4
 ```
 
 ---
@@ -103,13 +103,13 @@ sudo svp -mode php-update -domain example.com -php-version 8.4
 svp -version
 
 # Verify configuration
-sudo svp -mode verify
+sudo svp verify
 
 # Update svp
-sudo svp -mode update
+sudo svp update
 
 # View help
-svp --help
+svp
 ```
 
 ---
@@ -134,30 +134,29 @@ For each site, svp configures:
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-mode` | `setup`, `verify`, `update`, `php-update` | `setup` |
 | `-cms` | `drupal` or `wordpress` | `drupal` |
 | `-domain` | Primary domain (required) | - |
 | `-php-version` | PHP version | `8.4` |
 | `-le-email` | Let's Encrypt email for SSL | - |
 | `-git-repo` | Git repository URL | - |
+| `-git-branch` | Git branch (uses default if not specified) | - |
 | `-db` | Database file to import | - |
 
-[View all flags →](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line)
+[View all flags →](https://github.com/willjackson/simple-vps-provisioner#readme)
 
 ---
 
 ## Documentation
 
-📖 **Full documentation available at: [willjackson.github.io/simple-vps-provisioner](https://willjackson.github.io/simple-vps-provisioner/)**
+📖 **Full documentation available at: [github.com/willjackson/simple-vps-provisioner](https://github.com/willjackson/simple-vps-provisioner#readme)**
 
 ### Quick Links
 
-- [Getting Started Guide](https://willjackson.github.io/simple-vps-provisioner/getting-started)
-- [Complete Documentation](https://willjackson.github.io/simple-vps-provisioner/documentation/)
-- [Examples & Use Cases](https://willjackson.github.io/simple-vps-provisioner/examples/)
-- [Command-Line Reference](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line)
-- [Development Guide](https://willjackson.github.io/simple-vps-provisioner/development/)
-- [Troubleshooting](https://willjackson.github.io/simple-vps-provisioner/documentation/troubleshooting)
+- [Getting Started Guide](https://github.com/willjackson/simple-vps-provisioner#readme)
+- [Complete Documentation](https://github.com/willjackson/simple-vps-provisioner#readme)
+- [Examples & Use Cases](https://github.com/willjackson/simple-vps-provisioner#examples)
+- [Command-Line Reference](https://github.com/willjackson/simple-vps-provisioner#readme)
+- [Troubleshooting](https://github.com/willjackson/simple-vps-provisioner#troubleshooting)
 
 ---
 
@@ -190,16 +189,15 @@ cd simple-vps-provisioner
 sudo bash install.sh
 ```
 
-[More installation options →](https://willjackson.github.io/simple-vps-provisioner/documentation/#installation-methods)
+[More installation options →](https://github.com/willjackson/simple-vps-provisioner#readme)
 
 ---
 
 ## Support & Contributing
 
-- **📖 Documentation**: [willjackson.github.io/simple-vps-provisioner](https://willjackson.github.io/simple-vps-provisioner/)
+- **📖 Documentation**: [github.com/willjackson/simple-vps-provisioner](https://github.com/willjackson/simple-vps-provisioner#readme)
 - **🐛 Bug Reports**: [GitHub Issues](https://github.com/willjackson/simple-vps-provisioner/issues)
 - **💬 Discussions**: [GitHub Discussions](https://github.com/willjackson/simple-vps-provisioner/discussions)
-- **🔧 Development**: [Contributing Guide](https://willjackson.github.io/simple-vps-provisioner/development/)
 
 ---
 
@@ -213,26 +211,26 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ### Fresh Drupal Site
 ```bash
-sudo svp -mode setup -cms drupal -domain mysite.com -le-email admin@mysite.com
+sudo svp setup -cms drupal -domain mysite.com -le-email admin@mysite.com
 ```
 
 ### WordPress from Git
 ```bash
-sudo svp -mode setup -cms wordpress -domain blog.com -git-repo https://github.com/me/blog.git -le-email admin@blog.com
+sudo svp setup -cms wordpress -domain blog.com -git-repo https://github.com/me/blog.git -le-email admin@blog.com
 ```
 
 ### Staging + Production
 ```bash
-sudo svp -mode setup -cms drupal -domain myapp.com -extra-domains "staging.myapp.com" -le-email dev@myapp.com
+sudo svp setup -cms drupal -domain myapp.com -extra-domains "staging.myapp.com" -le-email dev@myapp.com
 ```
 
-[View more examples →](https://willjackson.github.io/simple-vps-provisioner/examples/)
+[View more examples →](https://github.com/willjackson/simple-vps-provisioner#examples)
 
 ---
 
 <div align="center">
 
-**[Get Started](https://willjackson.github.io/simple-vps-provisioner/getting-started) • [Documentation](https://willjackson.github.io/simple-vps-provisioner/documentation/) • [Examples](https://willjackson.github.io/simple-vps-provisioner/examples/)**
+**[Get Started](https://github.com/willjackson/simple-vps-provisioner#quick-start) • [Documentation](https://github.com/willjackson/simple-vps-provisioner#readme) • [Examples](https://github.com/willjackson/simple-vps-provisioner#examples)**
 
 Made with ❤️ for the Drupal and WordPress communities
 

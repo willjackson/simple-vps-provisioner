@@ -5,11 +5,11 @@ title: Command-Line Reference
 
 # Command-Line Reference
 
-Complete reference for all svp command-line options and modes.
+Complete reference for all svp command-line options and commands.
 
 ## Table of Contents
 
-- [Operating Modes](#operating-modes)
+- [Commands](#commands)
 - [Global Flags](#global-flags)
 - [CMS Options](#cms-options)
 - [Domain Configuration](#domain-configuration)
@@ -21,16 +21,16 @@ Complete reference for all svp command-line options and modes.
 
 ---
 
-## Operating Modes
+## Commands
 
-svp operates in different modes via the `-mode` flag.
+svp uses positional commands instead of flags.
 
-### Setup Mode (Default)
+### Setup Command
 
 Perform full VPS provisioning.
 
 ```bash
-svp -mode setup [options]
+svp setup [options]
 ```
 
 **What it does:**
@@ -44,15 +44,15 @@ svp -mode setup [options]
 
 **Example:**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com
+sudo svp setup -cms drupal -domain example.com
 ```
 
-### Verify Mode
+### Verify Command
 
 Check configuration without making changes.
 
 ```bash
-svp -mode verify
+svp verify
 ```
 
 **What it checks:**
@@ -86,12 +86,12 @@ svp -mode verify
 ==========================================================
 ```
 
-### Update Mode
+### Update Command
 
 Update svp to the latest version.
 
 ```bash
-svp -mode update
+svp update
 ```
 
 **What it does:**
@@ -103,7 +103,7 @@ svp -mode update
 
 **Example:**
 ```bash
-$ sudo svp -mode update
+$ sudo svp update
 
 [CREATE] Checking for updates...
 Current version: v1.0.24
@@ -119,12 +119,12 @@ Update now? [y/N]: y
 [✓] Successfully updated to v1.0.30!
 ```
 
-### PHP Update Mode
+### PHP Update Command
 
 Update PHP version for a domain.
 
 ```bash
-svp -mode php-update -domain DOMAIN -php-version VERSION
+svp php-update -domain DOMAIN -php-version VERSION
 ```
 
 **What it does:**
@@ -137,7 +137,7 @@ svp -mode php-update -domain DOMAIN -php-version VERSION
 
 **Example:**
 ```bash
-sudo svp -mode php-update -domain example.com -php-version 8.4
+sudo svp php-update -domain example.com -php-version 8.4
 ```
 
 ---
@@ -162,7 +162,7 @@ Simple VPS Provisioner (svp) version 1.0.30
 Enable debug mode for troubleshooting.
 
 ```bash
-svp -debug -mode setup -cms drupal -domain example.com
+svp -debug setup -cms drupal -domain example.com
 ```
 
 Enables verbose output showing all command execution.
@@ -184,10 +184,10 @@ Choose CMS to install.
 
 ```bash
 # Drupal
-sudo svp -mode setup -cms drupal -domain example.com
+sudo svp setup -cms drupal -domain example.com
 
 # WordPress
-sudo svp -mode setup -cms wordpress -domain myblog.com
+sudo svp setup -cms wordpress -domain myblog.com
 ```
 
 ---
@@ -204,7 +204,7 @@ Primary domain name (required for setup).
 
 **Example:**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com
+sudo svp setup -cms drupal -domain example.com
 ```
 
 ### -extra-domains
@@ -223,7 +223,7 @@ Each domain gets:
 
 **Example:**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -extra-domains "staging.example.com,dev.example.com"
@@ -251,7 +251,7 @@ PHP version to install.
 
 **Example:**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -php-version 8.4
+sudo svp setup -cms drupal -domain example.com -php-version 8.4
 ```
 
 **Available versions:**
@@ -277,7 +277,7 @@ Enable or disable SSL/HTTPS.
 
 **Example (with SSL):**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -ssl=true \
@@ -286,7 +286,7 @@ sudo svp -mode setup \
 
 **Example (HTTP only):**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -ssl=false
+sudo svp setup -cms drupal -domain example.com -ssl=false
 ```
 
 ### -le-email
@@ -307,7 +307,7 @@ Let's Encrypt email for SSL certificates.
 
 **Example:**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -le-email admin@example.com
@@ -324,7 +324,7 @@ Enable or disable UFW firewall.
 
 **Example:**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -firewall=true
+sudo svp setup -cms drupal -domain example.com -firewall=true
 ```
 
 ---
@@ -342,7 +342,7 @@ Git repository URL to clone.
 
 **Example:**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -git-repo https://github.com/myorg/mysite.git
@@ -350,17 +350,19 @@ sudo svp -mode setup \
 
 ### -git-branch
 
-Git branch to checkout.
+Git branch to checkout (optional).
 
 ```bash
--git-branch main        # Default
 -git-branch production
 -git-branch develop
+-git-branch main
 ```
+
+**Note:** If not specified, uses the repository's default branch.
 
 **Example:**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -git-repo https://github.com/myorg/mysite.git \
@@ -383,7 +385,7 @@ Drupal root directory (relative to repo).
 
 **Example:**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -git-repo https://github.com/myorg/monorepo.git \
@@ -402,7 +404,7 @@ Custom document root path.
 
 **Example:**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -git-repo https://github.com/myorg/mysite.git \
@@ -424,12 +426,12 @@ Database engine to use.
 
 **Example (with database):**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -db-engine mariadb
+sudo svp setup -cms drupal -domain example.com -db-engine mariadb
 ```
 
 **Example (without database):**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -db-engine none
+sudo svp setup -cms drupal -domain example.com -db-engine none
 ```
 
 ### -db
@@ -452,7 +454,7 @@ Path to database file for import.
 
 **Example:**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -db /home/admin/backup.sql.gz
@@ -479,12 +481,12 @@ Keep existing database when reprovisioning.
 
 **Example (fresh database):**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com
+sudo svp setup -cms drupal -domain example.com
 ```
 
 **Example (keep credentials):**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -keep-existing-db
+sudo svp setup -cms drupal -domain example.com -keep-existing-db
 ```
 
 ---
@@ -507,7 +509,7 @@ Sites are created as:
 
 **Example:**
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -webroot /srv/www
@@ -529,7 +531,7 @@ Create swap space.
 
 **Example:**
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -create-swap yes
+sudo svp setup -cms drupal -domain example.com -create-swap yes
 ```
 
 ---
@@ -539,13 +541,13 @@ sudo svp -mode setup -cms drupal -domain example.com -create-swap yes
 ### Minimal Drupal (HTTP only)
 
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -ssl=false
+sudo svp setup -cms drupal -domain example.com -ssl=false
 ```
 
 ### Production Drupal with SSL
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -le-email admin@example.com
@@ -554,7 +556,7 @@ sudo svp -mode setup \
 ### Drupal from Git with Custom PHP
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -php-version 8.4 \
@@ -566,7 +568,7 @@ sudo svp -mode setup \
 ### WordPress with Database Import
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms wordpress \
   -domain myblog.com \
   -db /home/admin/wp-backup.sql.gz \
@@ -576,7 +578,7 @@ sudo svp -mode setup \
 ### Multi-Environment Setup
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain mysite.com \
   -extra-domains "staging.mysite.com,dev.mysite.com" \
@@ -587,13 +589,13 @@ sudo svp -mode setup \
 ### Reprovision with Fresh Database
 
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com
+sudo svp setup -cms drupal -domain example.com
 ```
 
 ### Reprovision Keeping Credentials
 
 ```bash
-sudo svp -mode setup -cms drupal -domain example.com -keep-existing-db
+sudo svp setup -cms drupal -domain example.com -keep-existing-db
 ```
 
 ---
@@ -614,7 +616,7 @@ Use quotes for values with special characters:
 All flags can be combined:
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -php-version 8.4 \
@@ -633,6 +635,12 @@ View all options:
 
 ```bash
 svp --help
+```
+
+Or just run svp with no arguments:
+
+```bash
+svp
 ```
 
 ---

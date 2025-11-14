@@ -13,6 +13,9 @@ import (
 // Default to dev if not set during build
 var version = "dev"
 
+// Documentation URL
+const documentationURL = "https://github.com/willjackson/simple-vps-provisioner#readme"
+
 func main() {
 	// Ensure running as root
 	utils.RequireRoot()
@@ -20,8 +23,7 @@ func main() {
 	// Define configuration
 	cfg := &types.Config{}
 
-	// Define flags
-	flag.StringVar(&cfg.Mode, "mode", "setup", "Operation mode: setup, verify, update, php-update")
+	// Define flags (no mode flag - it's now a positional argument)
 	flag.StringVar(&cfg.CMS, "cms", "drupal", "CMS to install: drupal or wordpress")
 	flag.StringVar(&cfg.PHPVersion, "php-version", "8.4", "PHP version to install")
 	flag.StringVar(&cfg.PrimaryDomain, "domain", "", "Primary domain name (required for setup)")
@@ -29,7 +31,7 @@ func main() {
 	flag.StringVar(&cfg.LEEmail, "le-email", "", "Let's Encrypt email address")
 	flag.StringVar(&cfg.Webroot, "webroot", "/var/www", "Parent directory for sites")
 	flag.StringVar(&cfg.GitRepo, "git-repo", "", "Git repository URL")
-	flag.StringVar(&cfg.GitBranch, "git-branch", "main", "Git branch to checkout")
+	flag.StringVar(&cfg.GitBranch, "git-branch", "", "Git branch to checkout (uses repository default if not specified)")
 	flag.StringVar(&cfg.DrupalRoot, "drupal-root", "", "Drupal root path (relative to repo)")
 	flag.StringVar(&cfg.Docroot, "docroot", "", "Custom docroot path")
 	flag.StringVar(&cfg.DBEngine, "db-engine", "mariadb", "Database engine: mariadb or none")
@@ -50,32 +52,23 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Simple VPS Provisioner (svp) v%s\n\n", version)
 		fmt.Fprintf(os.Stderr, "A Go CLI tool for provisioning Debian VPS with LAMP stack for Drupal or WordPress.\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
-		fmt.Fprintf(os.Stderr, "  svp [options]\n\n")
+		fmt.Fprintf(os.Stderr, "  svp <command> [options]\n\n")
+		fmt.Fprintf(os.Stderr, "Commands:\n")
+		fmt.Fprintf(os.Stderr, "  setup        Provision VPS with LAMP stack and CMS\n")
+		fmt.Fprintf(os.Stderr, "  verify       Verify system configuration without making changes\n")
+		fmt.Fprintf(os.Stderr, "  update       Check for and install updates to svp\n")
+		fmt.Fprintf(os.Stderr, "  php-update   Update PHP version for a specific domain\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
 		fmt.Fprintf(os.Stderr, "  # Install Drupal for a domain:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com\n\n")
-		fmt.Fprintf(os.Stderr, "  # Install WordPress for a domain:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms wordpress -domain example.com\n\n")
-		fmt.Fprintf(os.Stderr, "  # Install with multiple domains:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -extra-domains 'staging.example.com,dev.example.com'\n\n")
-		fmt.Fprintf(os.Stderr, "  # Deploy from Git repository:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -git-repo https://github.com/org/repo.git -git-branch main\n\n")
-		fmt.Fprintf(os.Stderr, "  # Install with database import:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -db /path/to/database.sql.gz\n\n")
-		fmt.Fprintf(os.Stderr, "  # Install with SSL/HTTPS:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -le-email admin@example.com\n\n")
+		fmt.Fprintf(os.Stderr, "  svp setup -cms drupal -domain example.com\n\n")
+		fmt.Fprintf(os.Stderr, "  # Install WordPress with SSL:\n")
+		fmt.Fprintf(os.Stderr, "  svp setup -cms wordpress -domain example.com -le-email admin@example.com\n\n")
 		fmt.Fprintf(os.Stderr, "  # Verify system configuration:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode verify\n\n")
-		fmt.Fprintf(os.Stderr, "  # Check for and install updates:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode update\n\n")
-		fmt.Fprintf(os.Stderr, "  # Update PHP version for a domain:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode php-update -domain example.com -php-version 8.4\n\n")
-		fmt.Fprintf(os.Stderr, "  # Reprovision with fresh database (default):\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com\n\n")
-		fmt.Fprintf(os.Stderr, "  # Reprovision keeping same database credentials:\n")
-		fmt.Fprintf(os.Stderr, "  svp -mode setup -cms drupal -domain example.com -keep-existing-db\n\n")
+		fmt.Fprintf(os.Stderr, "  svp verify\n\n")
+		fmt.Fprintf(os.Stderr, "For more examples and documentation, visit:\n")
+		fmt.Fprintf(os.Stderr, "  %s\n\n", documentationURL)
 	}
 
 	// Parse flags
@@ -90,6 +83,16 @@ func main() {
 		}
 		os.Exit(0)
 	}
+
+	// Get command from first positional argument
+	args := flag.Args()
+	if len(args) == 0 {
+		// No command provided - show help
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	cfg.Mode = args[0]
 
 	// Enable debug mode if requested
 	if cfg.Debug {
@@ -113,7 +116,7 @@ func main() {
 		// Validate required parameters
 		if cfg.PrimaryDomain == "" {
 			utils.Err("Primary domain is required for setup mode")
-			utils.Err("Use: svp -mode setup -cms %s -domain your-domain.com", cfg.CMS)
+			utils.Err("Use: svp setup -cms %s -domain your-domain.com", cfg.CMS)
 			os.Exit(1)
 		}
 
@@ -136,19 +139,20 @@ func main() {
 		// Validate required parameters
 		if cfg.PrimaryDomain == "" {
 			utils.Err("Domain is required for php-update mode")
-			utils.Err("Use: svp -mode php-update -domain example.com -php-version 8.4")
+			utils.Err("Use: svp php-update -domain example.com -php-version 8.4")
 			os.Exit(1)
 		}
 		if cfg.PHPVersion == "" {
 			utils.Err("PHP version is required for php-update mode")
-			utils.Err("Use: svp -mode php-update -domain example.com -php-version 8.4")
+			utils.Err("Use: svp php-update -domain example.com -php-version 8.4")
 			os.Exit(1)
 		}
 		err = cmd.PHPUpdate(cfg)
 
 	default:
-		utils.Err("Unknown mode: %s", cfg.Mode)
-		utils.Err("Available modes: setup, verify, update, php-update")
+		utils.Err("Unknown command: %s", cfg.Mode)
+		utils.Err("Available commands: setup, verify, update, php-update")
+		utils.Err("Run 'svp' for help")
 		os.Exit(1)
 	}
 

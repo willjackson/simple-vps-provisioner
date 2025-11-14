@@ -157,7 +157,7 @@ func InstallSomething(verifyOnly bool) error {
 6. **Test Locally**
    ```bash
    go build -o svp
-   sudo ./svp -mode setup -my-feature
+   sudo ./svp setup -my-feature
    ```
 
 7. **Document**
@@ -194,12 +194,12 @@ func InstallSomething(verifyOnly bool) error {
 3. **Test on VM**
    ```bash
    multipass shell svp-test
-   sudo ./svp -mode setup -cms drupal -domain test.local -ssl=false
+   sudo ./svp setup -cms drupal -domain test.local -ssl=false
    ```
 
 4. **Verify**
    ```bash
-   sudo ./svp -mode verify
+   sudo ./svp verify
    curl -I http://test.local
    ```
 
@@ -431,10 +431,10 @@ fmt.Println("Message")  // ❌
 ```bash
 # Environment variable
 export DEBUG=1
-./svp -mode setup
+./svp setup
 
 # Or flag
-./svp -debug -mode setup
+./svp -debug setup
 ```
 
 ### Common Issues

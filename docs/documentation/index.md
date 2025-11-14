@@ -155,7 +155,7 @@ Wait 5-30 minutes for DNS propagation.
 ### 2. Run Setup Command
 
 ```bash
-sudo svp -mode setup \
+sudo svp setup \
   -cms drupal \
   -domain example.com \
   -le-email admin@example.com
