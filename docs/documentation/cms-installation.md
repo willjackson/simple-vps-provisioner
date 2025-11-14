@@ -15,9 +15,9 @@ Install the latest Drupal with default settings:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --le-email admin@example.com
 ```
 
 **What gets installed:**
@@ -80,11 +80,11 @@ Deploy from a Git repository:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/myorg/mysite.git \
-  -git-branch main \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/myorg/mysite.git \
+  --git-branch main \
+  --le-email admin@example.com
 ```
 
 **Requirements for your repository:**
@@ -98,11 +98,11 @@ Restore from existing database dump:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/myorg/mysite.git \
-  -db /path/to/backup.sql.gz \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/myorg/mysite.git \
+  --db /path/to/backup.sql.gz \
+  --le-email admin@example.com
 ```
 
 **Supported formats:**
@@ -148,9 +148,9 @@ Install latest WordPress:
 
 ```bash
 sudo svp setup \
-  -cms wordpress \
-  -domain myblog.com \
-  -le-email admin@myblog.com
+  --cms wordpress \
+  --domain myblog.com \
+  --le-email admin@myblog.com
 ```
 
 **What gets installed:**
@@ -199,10 +199,10 @@ Deploy from Git repository:
 
 ```bash
 sudo svp setup \
-  -cms wordpress \
-  -domain myblog.com \
-  -git-repo https://github.com/myorg/wp-site.git \
-  -le-email admin@myblog.com
+  --cms wordpress \
+  --domain myblog.com \
+  --git-repo https://github.com/myorg/wp-site.git \
+  --le-email admin@myblog.com
 ```
 
 **Repository structure:**
@@ -223,10 +223,10 @@ Restore existing WordPress database:
 
 ```bash
 sudo svp setup \
-  -cms wordpress \
-  -domain myblog.com \
-  -db /path/to/wp-backup.sql.gz \
-  -le-email admin@myblog.com
+  --cms wordpress \
+  --domain myblog.com \
+  --db /path/to/wp-backup.sql.gz \
+  --le-email admin@myblog.com
 ```
 
 **After import, update URLs:**

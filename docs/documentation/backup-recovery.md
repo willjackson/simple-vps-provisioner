@@ -464,7 +464,7 @@ echo "=== Restore Complete ==="
 curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh | sudo bash
 
 # Provision site (no database import yet)
-sudo svp setup -cms drupal -domain example.com -ssl=false
+sudo svp setup --cms drupal --domain example.com --ssl=false
 ```
 
 **2. Restore from backup:**
@@ -496,7 +496,7 @@ Regularly test your backups:
 
 ```bash
 # Create test site
-sudo svp setup -cms drupal -domain test.example.com -ssl=false
+sudo svp setup --cms drupal --domain test.example.com --ssl=false
 
 # Restore backup to test site
 drush-test.example.com sql-drop -y

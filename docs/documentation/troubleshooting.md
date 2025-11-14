@@ -70,7 +70,7 @@ sudo bash install.sh
 sudo systemctl stop nginx
 
 # Run svp
-sudo svp setup -cms drupal -domain example.com -le-email admin@example.com
+sudo svp setup --cms drupal --domain example.com --le-email admin@example.com
 
 # Nginx will be restarted automatically
 ```
@@ -114,7 +114,7 @@ Use these credentials in your CMS settings.php or wp-config.php.
 **Solution:**
 ```bash
 # Update PHP version for domain
-sudo svp php-update -domain example.com -php-version 8.4
+sudo svp php-update --domain example.com --php-version 8.4
 
 # Restart PHP-FPM
 sudo systemctl restart php8.4-fpm
@@ -146,7 +146,7 @@ sudo systemctl restart php8.3-fpm
 **Solution:**
 1. Use HTTPS instead:
    ```bash
-   -git-repo https://github.com/user/repo.git
+   --git-repo https://github.com/user/repo.git
    ```
 
 2. Or configure SSH key:
@@ -168,7 +168,7 @@ sudo systemctl restart php8.3-fpm
 - Try smaller repository first
 - Use `DEBUG=1` to see progress:
   ```bash
-  DEBUG=1 sudo svp setup -cms drupal -domain example.com -git-repo https://...
+  DEBUG=1 sudo svp setup --cms drupal --domain example.com --git-repo https://...
   ```
 
 ## Firewall Issues
@@ -338,7 +338,7 @@ sudo tail -f /var/log/nginx/example.com.error.log
 
 Run svp with debug output:
 ```bash
-DEBUG=1 sudo svp setup -cms drupal -domain example.com -le-email admin@example.com
+DEBUG=1 sudo svp setup --cms drupal --domain example.com --le-email admin@example.com
 ```
 
 This shows detailed command execution and can help identify where issues occur.
@@ -353,7 +353,7 @@ If you're still experiencing issues:
 4. **Search existing issues**: [GitHub Issues](https://github.com/willjackson/simple-vps-provisioner/issues)
 5. **Create new issue**: Include:
    - OS version: `cat /etc/os-release`
-   - svp version: `svp -version`
+   - svp version: `svp --version`
    - Command used
    - Error messages
    - Relevant log output

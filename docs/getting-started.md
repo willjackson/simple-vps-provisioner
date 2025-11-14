@@ -46,7 +46,7 @@ sudo bash install-svp.sh
 ### Verify Installation
 
 ```bash
-svp -version
+svp --version
 # Output: Simple VPS Provisioner (svp) version 1.0.30
 ```
 
@@ -69,18 +69,18 @@ For a fresh Drupal installation:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --le-email admin@example.com
 ```
 
 For WordPress:
 
 ```bash
 sudo svp setup \
-  -cms wordpress \
-  -domain example.com \
-  -le-email admin@example.com
+  --cms wordpress \
+  --domain example.com \
+  --le-email admin@example.com
 ```
 
 ### Step 3: Watch the Magic Happen
@@ -109,44 +109,44 @@ Once complete, you'll see a summary with:
 ### Choose PHP Version
 
 ```bash
-sudo svp setup -cms drupal -domain example.com -php-version 8.4
+sudo svp setup --cms drupal --domain example.com --php-version 8.4
 ```
 
 ### Deploy from Git
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/myorg/mysite.git \
-  -git-branch production \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/myorg/mysite.git \
+  --git-branch production \
+  --le-email admin@example.com
 ```
 
 ### Multiple Domains
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -extra-domains "staging.example.com,dev.example.com" \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --extra-domains "staging.example.com,dev.example.com" \
+  --le-email admin@example.com
 ```
 
 ### Import Existing Database
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -db /path/to/backup.sql.gz \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --db /path/to/backup.sql.gz \
+  --le-email admin@example.com
 ```
 
 ### HTTP Only (No SSL)
 
 ```bash
-sudo svp setup -cms drupal -domain example.com -ssl=false
+sudo svp setup --cms drupal --domain example.com --ssl=false
 ```
 
 ## Understanding the Output

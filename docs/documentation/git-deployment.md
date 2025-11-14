@@ -25,10 +25,10 @@ svp can clone and deploy sites directly from Git repositories, perfect for:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/myorg/mysite.git \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/myorg/mysite.git \
+  --le-email admin@example.com
 ```
 
 **What happens:**
@@ -41,14 +41,14 @@ sudo svp setup \
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/myorg/mysite.git \
-  -git-branch production \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/myorg/mysite.git \
+  --git-branch production \
+  --le-email admin@example.com
 ```
 
-If `-git-branch` is not specified, the repository's default branch is used.
+If `--git-branch` is not specified, the repository's default branch is used.
 
 ---
 
@@ -178,24 +178,24 @@ Different branches per environment:
 ```bash
 # Production - main branch
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo git@github.com:myorg/mysite.git \
-  -git-branch main
+  --cms drupal \
+  --domain example.com \
+  --git-repo git@github.com:myorg/mysite.git \
+  --git-branch main
 
 # Staging - develop branch
 sudo svp setup \
-  -cms drupal \
-  -domain staging.example.com \
-  -git-repo git@github.com:myorg/mysite.git \
-  -git-branch develop
+  --cms drupal \
+  --domain staging.example.com \
+  --git-repo git@github.com:myorg/mysite.git \
+  --git-branch develop
 
 # Development - develop branch (for feature testing)
 sudo svp setup \
-  -cms drupal \
-  -domain dev.example.com \
-  -git-repo git@github.com:myorg/mysite.git \
-  -git-branch develop
+  --cms drupal \
+  --domain dev.example.com \
+  --git-repo git@github.com:myorg/mysite.git \
+  --git-branch develop
 ```
 
 ---
@@ -269,15 +269,15 @@ monorepo/
 └── docs/
 ```
 
-Use `-drupal-root` flag:
+Use `--drupal-root` flag:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/myorg/monorepo.git \
-  -drupal-root "backend" \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/myorg/monorepo.git \
+  --drupal-root "backend" \
+  --le-email admin@example.com
 ```
 
 ### Custom Document Root
@@ -286,11 +286,11 @@ Non-standard docroot path:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/myorg/mysite.git \
-  -docroot "public" \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/myorg/mysite.git \
+  --docroot "public" \
+  --le-email admin@example.com
 ```
 
 ---
@@ -357,11 +357,11 @@ Clone repo and import existing database:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/myorg/mysite.git \
-  -db /path/to/backup.sql.gz \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/myorg/mysite.git \
+  --db /path/to/backup.sql.gz \
+  --le-email admin@example.com
 ```
 
 **Process:**

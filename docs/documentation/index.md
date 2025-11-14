@@ -102,7 +102,7 @@ chmod +x svp-linux-amd64
 sudo mv svp-linux-amd64 /usr/local/bin/svp
 
 # Verify
-svp -version
+svp --version
 ```
 
 **Use when:**
@@ -147,9 +147,9 @@ Wait 5-30 minutes for DNS propagation.
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --le-email admin@example.com
 ```
 
 ### 3. Wait for Completion
@@ -183,7 +183,7 @@ svp respects these environment variables:
 
 Enable debug output:
 ```bash
-DEBUG=1 svp -mode setup -cms drupal -domain example.com
+DEBUG=1 svp --mode setup --cms drupal --domain example.com
 ```
 
 Shows detailed command execution and troubleshooting information.

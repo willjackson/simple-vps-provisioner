@@ -27,9 +27,9 @@ SSL is enabled by default when you provide an email address:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --le-email admin@example.com
 ```
 
 This will:
@@ -60,10 +60,10 @@ dig +short example.com
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -ssl=true \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --ssl=true \
+  --le-email admin@example.com
 ```
 
 ### Disable SSL (HTTP Only)
@@ -72,9 +72,9 @@ For development or internal use:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -ssl=false
+  --cms drupal \
+  --domain example.com \
+  --ssl=false
 ```
 
 **Use cases:**
@@ -90,10 +90,10 @@ When using multiple domains, each gets its own certificate:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -extra-domains "staging.example.com,dev.example.com" \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --extra-domains "staging.example.com,dev.example.com" \
+  --le-email admin@example.com
 ```
 
 **Results in:**
@@ -419,9 +419,9 @@ For development or testing:
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain dev.example.local \
-  -ssl=false
+  --cms drupal \
+  --domain dev.example.local \
+  --ssl=false
 ```
 
 **Use when:**

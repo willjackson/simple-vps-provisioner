@@ -38,13 +38,13 @@ svp supports multiple PHP versions with:
 
 ```bash
 # Use default PHP 8.3
-sudo svp setup -cms drupal -domain example.com
+sudo svp setup --cms drupal --domain example.com
 
 # Specify PHP 8.4
-sudo svp setup -cms drupal -domain example.com -php-version 8.4
+sudo svp setup --cms drupal --domain example.com --php-version 8.4
 
 # Specify PHP 8.2
-sudo svp setup -cms drupal -domain example.com -php-version 8.2
+sudo svp setup --cms drupal --domain example.com --php-version 8.2
 ```
 
 ### Different Versions Per Site
@@ -53,13 +53,13 @@ Each site can use a different PHP version:
 
 ```bash
 # Site 1 with PHP 8.3
-sudo svp setup -cms drupal -domain site1.com -php-version 8.3
+sudo svp setup --cms drupal --domain site1.com --php-version 8.3
 
 # Site 2 with PHP 8.4
-sudo svp setup -cms drupal -domain site2.com -php-version 8.4
+sudo svp setup --cms drupal --domain site2.com --php-version 8.4
 
 # Site 3 with PHP 8.2
-sudo svp setup -cms wordpress -domain site3.com -php-version 8.2
+sudo svp setup --cms wordpress --domain site3.com --php-version 8.2
 ```
 
 ---
@@ -71,7 +71,7 @@ sudo svp setup -cms wordpress -domain site3.com -php-version 8.2
 Update PHP version for existing site:
 
 ```bash
-sudo svp php-update -domain example.com -php-version 8.4
+sudo svp php-update --domain example.com --php-version 8.4
 ```
 
 **This automatically:**
@@ -486,7 +486,7 @@ Features:
 
 **1. Test on staging:**
 ```bash
-sudo svp php-update -domain staging.example.com -php-version 8.3
+sudo svp php-update --domain staging.example.com --php-version 8.3
 ```
 
 **2. Test application:**
@@ -496,7 +496,7 @@ sudo svp php-update -domain staging.example.com -php-version 8.3
 
 **3. Update production:**
 ```bash
-sudo svp php-update -domain example.com -php-version 8.3
+sudo svp php-update --domain example.com --php-version 8.3
 ```
 
 **4. Monitor:**
@@ -507,7 +507,7 @@ sudo tail -f /var/log/php8.3-fpm-example.com-error.log
 ### Rollback if Needed
 
 ```bash
-sudo svp php-update -domain example.com -php-version 8.2
+sudo svp php-update --domain example.com --php-version 8.2
 ```
 
 ---

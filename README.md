@@ -36,12 +36,12 @@ curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/
 
 **Drupal:**
 ```bash
-sudo svp setup -cms drupal -domain example.com -le-email admin@example.com
+sudo svp setup --cms drupal --domain example.com --le-email admin@example.com
 ```
 
 **WordPress:**
 ```bash
-sudo svp setup -cms wordpress -domain example.com -le-email admin@example.com
+sudo svp setup --cms wordpress --domain example.com --le-email admin@example.com
 ```
 
 That's it! Visit `https://example.com` 🎉
@@ -61,36 +61,36 @@ That's it! Visit `https://example.com` 🎉
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -git-repo https://github.com/yourorg/yoursite.git \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --git-repo https://github.com/yourorg/yoursite.git \
+  --le-email admin@example.com
 ```
 
 ### Multiple Environments
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -extra-domains "staging.example.com,dev.example.com" \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --extra-domains "staging.example.com,dev.example.com" \
+  --le-email admin@example.com
 ```
 
 ### Import Existing Database
 
 ```bash
 sudo svp setup \
-  -cms drupal \
-  -domain example.com \
-  -db /path/to/backup.sql.gz \
-  -le-email admin@example.com
+  --cms drupal \
+  --domain example.com \
+  --db /path/to/backup.sql.gz \
+  --le-email admin@example.com
 ```
 
 ### Update PHP Version
 
 ```bash
-sudo svp php-update -domain example.com -php-version 8.4
+sudo svp php-update --domain example.com --php-version 8.4
 ```
 
 ---
@@ -99,7 +99,7 @@ sudo svp php-update -domain example.com -php-version 8.4
 
 ```bash
 # Check version
-svp -version
+svp --version
 
 # Verify configuration
 sudo svp verify
@@ -133,13 +133,13 @@ For each site, svp configures:
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-cms` | `drupal` or `wordpress` | `drupal` |
-| `-domain` | Primary domain (required) | - |
-| `-php-version` | PHP version | `8.4` |
-| `-le-email` | Let's Encrypt email for SSL | - |
-| `-git-repo` | Git repository URL | - |
-| `-git-branch` | Git branch (uses default if not specified) | - |
-| `-db` | Database file to import | - |
+| `--cms` | `drupal` or `wordpress` | `drupal` |
+| `--domain` | Primary domain (required) | - |
+| `--php-version` | PHP version | `8.4` |
+| `--le-email` | Let's Encrypt email for SSL | - |
+| `--git-repo` | Git repository URL | - |
+| `--git-branch` | Git branch (uses default if not specified) | - |
+| `--db` | Database file to import | - |
 
 [View all flags →](https://willjackson.github.io/simple-vps-provisioner/documentation/command-line)
 
@@ -210,17 +210,17 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ### Fresh Drupal Site
 ```bash
-sudo svp setup -cms drupal -domain mysite.com -le-email admin@mysite.com
+sudo svp setup --cms drupal --domain mysite.com --le-email admin@mysite.com
 ```
 
 ### WordPress from Git
 ```bash
-sudo svp setup -cms wordpress -domain blog.com -git-repo https://github.com/me/blog.git -le-email admin@blog.com
+sudo svp setup --cms wordpress --domain blog.com --git-repo https://github.com/me/blog.git --le-email admin@blog.com
 ```
 
 ### Staging + Production
 ```bash
-sudo svp setup -cms drupal -domain myapp.com -extra-domains "staging.myapp.com" -le-email dev@myapp.com
+sudo svp setup --cms drupal --domain myapp.com --extra-domains "staging.myapp.com" --le-email dev@myapp.com
 ```
 
 [View more examples →](https://willjackson.github.io/simple-vps-provisioner/examples)

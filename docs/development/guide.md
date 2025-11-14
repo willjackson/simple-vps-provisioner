@@ -48,7 +48,7 @@ go mod tidy
 go build -o svp
 
 # Run
-./svp -version
+./svp --version
 ```
 
 ---
@@ -194,7 +194,7 @@ func InstallSomething(verifyOnly bool) error {
 3. **Test on VM**
    ```bash
    multipass shell svp-test
-   sudo ./svp setup -cms drupal -domain test.local -ssl=false
+   sudo ./svp setup --cms drupal --domain test.local --ssl=false
    ```
 
 4. **Verify**
@@ -349,7 +349,7 @@ https://github.com/willjackson/simple-vps-provisioner/releases
 curl -fsSL https://raw.githubusercontent.com/willjackson/simple-vps-provisioner/main/install-from-github.sh | sudo bash
 
 # Check version
-svp -version
+svp --version
 ```
 
 ---
@@ -434,7 +434,7 @@ export DEBUG=1
 ./svp setup
 
 # Or flag
-./svp -debug setup
+./svp --debug setup
 ```
 
 ### Common Issues

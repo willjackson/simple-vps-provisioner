@@ -56,7 +56,7 @@ VERSION=$(git describe --tags --always)
 go build -ldflags="-X main.version=${VERSION}" -o svp
 
 # Test
-./svp -version
+./svp --version
 ```
 
 ---
