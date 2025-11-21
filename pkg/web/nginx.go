@@ -183,3 +183,91 @@ server {
 
 	return nil
 }
+
+// CreateNginxVhostNode creates an Nginx virtual host for a Node.js application
+// This proxies requests to the Node.js app running on the specified port
+func CreateNginxVhostNode(domain, webroot string, port int) error {
+	vhostPath := fmt.Sprintf("/etc/nginx/sites-available/%s.conf", domain)
+	vhostLink := fmt.Sprintf("/etc/nginx/sites-enabled/%s.conf", domain)
+
+	vhostConfig := fmt.Sprintf(`# Nginx configuration for Node.js app: %s
+server {
+    listen 80;
+    listen [::]:80;
+    server_name %s;
+
+    # Logging
+    access_log /var/log/nginx/%s-access.log;
+    error_log /var/log/nginx/%s-error.log;
+
+    # Security headers
+    include snippets/security-headers.conf;
+
+    # Proxy to Node.js application
+    location / {
+        proxy_pass http://127.0.0.1:%d;
+        proxy_http_version 1.1;
+
+        # WebSocket support
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Disable caching for development
+        proxy_cache_bypass $http_upgrade;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Serve static files directly (if _next/static exists for Next.js)
+    location /_next/static {
+        alias %s/.next/static;
+        expires 365d;
+        access_log off;
+    }
+
+    # Serve public files directly
+    location /public {
+        alias %s/public;
+        expires 7d;
+    }
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+}
+`, domain, domain, domain, domain, port, webroot, webroot)
+
+	if utils.CheckFileExists(vhostPath) {
+		utils.Log("Updating Nginx vhost for Node.js app: %s", domain)
+	} else {
+		utils.Log("Creating Nginx vhost for Node.js app: %s", domain)
+	}
+
+	_, err := utils.RunShell(fmt.Sprintf("cat > %s <<'EOF'\n%s\nEOF", vhostPath, vhostConfig))
+	if err != nil {
+		return fmt.Errorf("failed to create vhost config: %v", err)
+	}
+
+	// Enable site
+	if !utils.CheckFileExists(vhostLink) {
+		utils.Log("Enabling site %s", domain)
+		_, err := utils.RunCommand("ln", "-sf", vhostPath, vhostLink)
+		if err != nil {
+			return fmt.Errorf("failed to enable site: %v", err)
+		}
+	}
+
+	return nil
+}

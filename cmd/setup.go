@@ -166,6 +166,53 @@ func FullSetup(cfg *types.Config) error {
 		}
 	}
 
+	// Detect Node.js applications in repositories
+	utils.Section("Checking for Node.js Applications")
+	nodeAppsByDomain := make(map[string][]cms.NodeApp)
+
+	// Only check if we're provisioning from a Git repository
+	if cfg.GitRepo != "" {
+		for _, domain := range domains {
+			domainDir := filepath.Join(cfg.Webroot, domain)
+
+			utils.Log("Scanning %s for Node.js applications...", domain)
+			nodeApps, err := cms.DetectNodeApps(domainDir)
+			if err != nil {
+				utils.Log("Warning: Failed to detect Node apps in %s: %v", domain, err)
+				continue
+			}
+
+			if len(nodeApps) > 0 {
+				fmt.Print(cms.GetNodeAppSummary(nodeApps))
+
+				// Ask user if they want to provision each Node app
+				fmt.Printf("\n%s[OPTIONAL]%s Would you like to create separate nginx virtualhosts for these Node.js app(s)?\n", utils.ColorYellow, utils.ColorReset)
+				fmt.Printf("This will:\n")
+				fmt.Printf("  - Create additional subdomains (e.g., frontend.%s)\n", domain)
+				fmt.Printf("  - Install dependencies and build the apps\n")
+				fmt.Printf("  - Setup systemd services to keep them running\n")
+				if cfg.SSLEnable && cfg.LEEmail != "" {
+					fmt.Printf("  - Configure SSL/HTTPS certificates\n")
+				}
+				fmt.Printf("\nIf you choose 'no', the Node apps will be cloned but not configured.\n")
+				fmt.Print("Create virtualhosts? (y/n): ")
+
+				var response string
+				fmt.Scanln(&response)
+
+				if strings.ToLower(strings.TrimSpace(response)) == "y" {
+					nodeAppsByDomain[domain] = nodeApps
+					utils.Ok("Node.js applications will be provisioned for %s", domain)
+				} else {
+					utils.Log("Skipping virtualhost creation for Node.js apps in %s", domain)
+					fmt.Println("  (You can manually configure them later)")
+				}
+			} else {
+				utils.Log("No Node.js applications detected in %s", domain)
+			}
+		}
+	}
+
 	// Configure Nginx
 	utils.Section("Nginx Configuration")
 	if err := web.EnsureSnippets(cfg.PHPVersion); err != nil {
@@ -307,6 +354,88 @@ func FullSetup(cfg *types.Config) error {
 		return err
 	}
 
+	// Track Node app domains for SSL configuration later
+	nodeAppDomains := make(map[string]string) // nodeDomain -> appWebroot
+
+	// Setup Node.js applications if user confirmed
+	if len(nodeAppsByDomain) > 0 {
+		utils.Section("Node.js Application Setup")
+
+		// Get admin user
+		adminUser := "admin"
+		output, err := utils.RunShell("getent group www-data | cut -d: -f4")
+		if err == nil {
+			members := strings.Split(strings.TrimSpace(output), ",")
+			for _, member := range members {
+				if member != "" && member != "www-data" {
+					adminUser = member
+					break
+				}
+			}
+		}
+
+		for parentDomain, nodeApps := range nodeAppsByDomain {
+			domainDir := filepath.Join(cfg.Webroot, parentDomain)
+
+			for i, app := range nodeApps {
+				// Generate a subdomain for the Node app
+				// e.g., if parent is example.com and app is in "frontend", create "app.example.com"
+				// or if app name is available, use that
+				nodeDomain := parentDomain
+				if app.Path != "" {
+					// Use the path as subdomain (e.g., frontend.example.com)
+					pathPart := strings.ReplaceAll(app.Path, "/", "-")
+					nodeDomain = fmt.Sprintf("%s.%s", pathPart, parentDomain)
+				} else if len(nodeApps) > 1 {
+					// Multiple apps in root, use index
+					nodeDomain = fmt.Sprintf("app%d.%s", i+1, parentDomain)
+				} else {
+					// Single app in root, ask user for subdomain
+					fmt.Printf("\nEnter subdomain for Node.js app '%s' (will create SUBDOMAIN.%s)\n", app.Name, parentDomain)
+					fmt.Print("Subdomain (press Enter for 'app'): ")
+					var subdomain string
+					fmt.Scanln(&subdomain)
+					if subdomain == "" {
+						subdomain = "app"
+					}
+					nodeDomain = fmt.Sprintf("%s.%s", subdomain, parentDomain)
+				}
+
+				utils.Log("Setting up Node.js app: %s -> %s", app.Name, nodeDomain)
+
+				// Install the Node app (npm install, build, etc.)
+				if err := cms.InstallNodeApp(app, parentDomain, cfg.Webroot, cfg.GitRepo, cfg.GitBranch, adminUser); err != nil {
+					utils.Warn("Failed to install Node app %s: %v", app.Name, err)
+					continue
+				}
+
+				// Create systemd service
+				if err := cms.CreateNodeSystemdService(app, nodeDomain, cfg.Webroot, adminUser); err != nil {
+					utils.Warn("Failed to create systemd service for %s: %v", app.Name, err)
+					continue
+				}
+
+				// Create Nginx virtualhost
+				appWebroot := filepath.Join(domainDir, app.Path)
+				if err := web.CreateNginxVhostNode(nodeDomain, appWebroot, app.Port); err != nil {
+					utils.Warn("Failed to create nginx vhost for %s: %v", nodeDomain, err)
+					continue
+				}
+
+				// Track this domain for SSL configuration
+				nodeAppDomains[nodeDomain] = appWebroot
+
+				utils.Ok("Node.js app %s configured at %s (port %d)", app.Name, nodeDomain, app.Port)
+				fmt.Printf("   Don't forget to point DNS for %s to this server!\n", nodeDomain)
+			}
+		}
+
+		// Reload Nginx again for Node apps
+		if err := web.ReloadNginx(); err != nil {
+			return err
+		}
+	}
+
 	// Install Certbot and obtain SSL certificates if enabled and email provided
 	if cfg.SSLEnable && cfg.LEEmail != "" {
 		utils.Section("SSL Certificates")
@@ -404,6 +533,61 @@ func FullSetup(cfg *types.Config) error {
 				}
 				if err := cms.UpdateDrushURLToHTTPS(domain, drushDir); err != nil {
 					utils.Warn("Failed to update drush URL: %v", err)
+				}
+			}
+		}
+
+		// Configure SSL for Node.js application domains
+		if len(nodeAppDomains) > 0 {
+			utils.Log("Configuring SSL for Node.js application domains...")
+
+			for nodeDomain := range nodeAppDomains {
+				utils.Log("Processing SSL for %s...", nodeDomain)
+
+				// Check if certificate already exists
+				certPath := fmt.Sprintf("/etc/letsencrypt/live/%s/fullchain.pem", nodeDomain)
+				if utils.CheckFileExists(certPath) {
+					utils.Log("Reconfiguring nginx with existing SSL certificate for %s", nodeDomain)
+					// Use certbot install to reconfigure nginx
+					cmd := fmt.Sprintf("certbot install --nginx --cert-name %s --non-interactive --redirect", nodeDomain)
+					if _, err := utils.RunShell(cmd); err != nil {
+						utils.Warn("Failed to reconfigure SSL for %s: %v", nodeDomain, err)
+						continue
+					}
+					utils.Ok("SSL reconfigured for %s", nodeDomain)
+				} else {
+					// PHASE 1: Obtain certificate
+					if err := ssl.ObtainCertificate(nodeDomain, cfg.LEEmail); err != nil {
+						// Check if user chose to skip SSL or abort
+						if strings.Contains(err.Error(), "skipping SSL: DNS not configured") {
+							utils.Warn("Skipping SSL for %s - continuing with HTTP only", nodeDomain)
+							continue
+						}
+						if strings.Contains(err.Error(), "setup aborted by user") {
+							return fmt.Errorf("setup aborted: %v", err)
+						}
+						// Other errors
+						utils.Warn("Failed to obtain SSL for %s: %v", nodeDomain, err)
+						utils.Warn("Site will remain HTTP only - nginx not modified")
+						continue
+					}
+
+					// PHASE 2: Configure nginx with the certificate
+					if err := ssl.ConfigureNginxSSL(nodeDomain); err != nil {
+						utils.Warn("Failed to configure nginx SSL for %s: %v", nodeDomain, err)
+						utils.Warn("Certificate obtained but nginx not configured - you can manually configure later")
+						continue
+					}
+
+					utils.Ok("SSL configured for Node app: %s", nodeDomain)
+				}
+
+				// Note: Node apps don't need docroot fixes like PHP apps
+				// The proxy configuration remains the same
+
+				// Enhance SSL configuration with better security settings
+				if err := ssl.EnhanceSSLConfig(nodeDomain); err != nil {
+					utils.Warn("Failed to enhance SSL config for %s: %v", nodeDomain, err)
 				}
 			}
 		}
