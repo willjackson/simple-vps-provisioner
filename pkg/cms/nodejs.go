@@ -126,29 +126,6 @@ func detectNodeAppInDir(dir, projectRoot string, port int) *NodeApp {
 		return nil
 	}
 
-	// Exclude Drupal/WordPress core directories
-	// Check if this looks like a CMS core directory
-	relPath, _ := filepath.Rel(projectRoot, dir)
-	lowerPath := strings.ToLower(relPath)
-
-	// Skip if path contains CMS core indicators
-	cmsCorePaths := []string{
-		"core/",
-		"/core",
-		"drupal/web/core",
-		"web/core",
-		"wp-admin",
-		"wp-includes",
-		"/includes",
-		"/libraries",
-	}
-
-	for _, cmsPath := range cmsCorePaths {
-		if strings.Contains(lowerPath, cmsPath) {
-			return nil // This is likely CMS core, not a standalone Node app
-		}
-	}
-
 	// Read package.json
 	data, err := os.ReadFile(packageJSONPath)
 	if err != nil {
@@ -173,6 +150,28 @@ func detectNodeAppInDir(dir, projectRoot string, port int) *NodeApp {
 	}
 	if relPath == "." {
 		relPath = ""
+	}
+
+	// Exclude Drupal/WordPress core directories
+	// Check if this looks like a CMS core directory
+	lowerPath := strings.ToLower(relPath)
+
+	// Skip if path contains CMS core indicators
+	cmsCorePaths := []string{
+		"core/",
+		"/core",
+		"drupal/web/core",
+		"web/core",
+		"wp-admin",
+		"wp-includes",
+		"/includes",
+		"/libraries",
+	}
+
+	for _, cmsPath := range cmsCorePaths {
+		if strings.Contains(lowerPath, cmsPath) {
+			return nil // This is likely CMS core, not a standalone Node app
+		}
 	}
 
 	// Check for build script
