@@ -386,13 +386,13 @@ WantedBy=multi-user.target
 
 		// Get recent logs
 		logs, _ := utils.RunCommand("journalctl", "-u", serviceName, "-n", "30", "--no-pager")
-		utils.Debug("Recent service logs:")
-		utils.Debug("%s", logs)
+		utils.Log("Recent service logs:")
+		utils.Log("%s", logs)
 
 		// Get detailed status
 		detailedStatus, _ := utils.RunCommand("systemctl", "status", serviceName, "--no-pager")
-		utils.Debug("Service status:")
-		utils.Debug("%s", detailedStatus)
+		utils.Log("Service status:")
+		utils.Log("%s", detailedStatus)
 
 		return fmt.Errorf("service %s failed to start (status: %s). Check logs with: journalctl -u %s -n 50", serviceName, statusStr, serviceName)
 	}
