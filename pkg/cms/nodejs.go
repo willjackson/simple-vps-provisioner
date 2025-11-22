@@ -44,6 +44,16 @@ func DetectNodeApps(projectDir string) ([]NodeApp, error) {
 		"public":       true,
 		"static":       true,
 		"assets":       true,
+		"core":         true, // Drupal core
+		"includes":     true, // Drupal includes
+		"modules":      true, // Drupal/WordPress modules (usually not standalone apps)
+		"themes":       true, // Drupal/WordPress themes (usually not standalone apps)
+		"sites":        true, // Drupal sites directory
+		"libraries":    true, // Drupal libraries
+		"profiles":     true, // Drupal profiles
+		"wp-admin":     true, // WordPress admin
+		"wp-includes":  true, // WordPress includes
+		"wp-content":   true, // WordPress content (check manually if needed)
 	}
 
 	// Check the root directory FIRST (so it gets port 3000)
@@ -114,6 +124,29 @@ func detectNodeAppInDir(dir, projectRoot string, port int) *NodeApp {
 
 	if !utils.CheckFileExists(packageJSONPath) {
 		return nil
+	}
+
+	// Exclude Drupal/WordPress core directories
+	// Check if this looks like a CMS core directory
+	relPath, _ := filepath.Rel(projectRoot, dir)
+	lowerPath := strings.ToLower(relPath)
+
+	// Skip if path contains CMS core indicators
+	cmsCorePaths := []string{
+		"core/",
+		"/core",
+		"drupal/web/core",
+		"web/core",
+		"wp-admin",
+		"wp-includes",
+		"/includes",
+		"/libraries",
+	}
+
+	for _, cmsPath := range cmsCorePaths {
+		if strings.Contains(lowerPath, cmsPath) {
+			return nil // This is likely CMS core, not a standalone Node app
+		}
 	}
 
 	// Read package.json
@@ -294,8 +327,10 @@ func installNodeJS(adminUser string) error {
 }
 
 // CreateNodeSystemdService creates a systemd service for a Node.js application
-func CreateNodeSystemdService(app NodeApp, domain, webroot, adminUser string) error {
-	projectDir := filepath.Join(webroot, domain)
+// domain is the domain name for the service (e.g., blog.will.gg)
+// parentDomain is where the files are actually located (e.g., drupal.will.gg)
+func CreateNodeSystemdService(app NodeApp, domain, parentDomain, webroot, adminUser string) error {
+	projectDir := filepath.Join(webroot, parentDomain)
 	appDir := filepath.Join(projectDir, app.Path)
 
 	serviceName := fmt.Sprintf("node-%s", domain)

@@ -443,7 +443,7 @@ func FullSetup(cfg *types.Config) error {
 				}
 
 				// Create systemd service
-				if err := cms.CreateNodeSystemdService(app, nodeDomain, cfg.Webroot, adminUser); err != nil {
+				if err := cms.CreateNodeSystemdService(app, nodeDomain, parentDomain, cfg.Webroot, adminUser); err != nil {
 					utils.Warn("Failed to create systemd service for %s: %v", app.Name, err)
 					continue
 				}
