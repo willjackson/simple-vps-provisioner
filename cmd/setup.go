@@ -378,29 +378,62 @@ func FullSetup(cfg *types.Config) error {
 			domainDir := filepath.Join(cfg.Webroot, parentDomain)
 
 			for i, app := range nodeApps {
-				// Generate a subdomain for the Node app
-				// e.g., if parent is example.com and app is in "frontend", create "app.example.com"
-				// or if app name is available, use that
-				nodeDomain := parentDomain
+				// Generate a suggested subdomain for the Node app
+				var suggestedSubdomain string
 				if app.Path != "" {
 					// Use the path as subdomain (e.g., frontend.example.com)
-					pathPart := strings.ReplaceAll(app.Path, "/", "-")
-					nodeDomain = fmt.Sprintf("%s.%s", pathPart, parentDomain)
+					suggestedSubdomain = strings.ReplaceAll(app.Path, "/", "-")
 				} else if len(nodeApps) > 1 {
 					// Multiple apps in root, use index
-					nodeDomain = fmt.Sprintf("app%d.%s", i+1, parentDomain)
+					suggestedSubdomain = fmt.Sprintf("app%d", i+1)
 				} else {
-					// Single app in root, ask user for subdomain
-					fmt.Printf("\nEnter subdomain for Node.js app '%s' (will create SUBDOMAIN.%s)\n", app.Name, parentDomain)
-					fmt.Print("Subdomain (press Enter for 'app'): ")
-					var subdomain string
-					fmt.Scanln(&subdomain)
-					if subdomain == "" {
-						subdomain = "app"
-					}
-					nodeDomain = fmt.Sprintf("%s.%s", subdomain, parentDomain)
+					// Single app in root, suggest "web"
+					suggestedSubdomain = "web"
 				}
 
+				suggestedDomain := fmt.Sprintf("%s.%s", suggestedSubdomain, parentDomain)
+
+				// Ask user to confirm or provide custom domain
+				fmt.Printf("\n")
+				fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+				fmt.Printf("  Node.js Application Detected\n")
+				fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+				fmt.Printf("  App Name: %s\n", app.Name)
+				fmt.Printf("  Type:     %s\n", app.Type)
+				if app.Path != "" {
+					fmt.Printf("  Path:     %s\n", app.Path)
+				}
+				fmt.Printf("  Port:     %d\n", app.Port)
+				fmt.Printf("\n")
+				fmt.Printf("  Suggested domain: %s\n", suggestedDomain)
+				fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+				fmt.Printf("\n")
+				fmt.Printf("Use suggested domain? [Y/n]: ")
+
+				var response string
+				fmt.Scanln(&response)
+				response = strings.ToLower(strings.TrimSpace(response))
+
+				var nodeDomain string
+				if response == "n" || response == "no" {
+					// User wants custom domain
+					fmt.Printf("\nEnter custom domain for this Node.js app: ")
+					var customDomain string
+					fmt.Scanln(&customDomain)
+					customDomain = strings.TrimSpace(customDomain)
+
+					if customDomain == "" {
+						utils.Warn("No domain provided, using suggested: %s", suggestedDomain)
+						nodeDomain = suggestedDomain
+					} else {
+						nodeDomain = customDomain
+					}
+				} else {
+					// Use suggested domain (default for Enter, Y, yes)
+					nodeDomain = suggestedDomain
+				}
+
+				fmt.Printf("\n")
 				utils.Log("Setting up Node.js app: %s -> %s", app.Name, nodeDomain)
 
 				// Install the Node app (npm install, build, etc.)

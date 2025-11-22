@@ -46,7 +46,14 @@ func DetectNodeApps(projectDir string) ([]NodeApp, error) {
 		"assets":       true,
 	}
 
-	// Walk the directory tree up to 2 levels deep
+	// Check the root directory FIRST (so it gets port 3000)
+	rootApp := detectNodeAppInDir(projectDir, projectDir, portCounter)
+	if rootApp != nil {
+		apps = append(apps, *rootApp)
+		portCounter++
+	}
+
+	// Walk the directory tree up to 2 levels deep for additional apps
 	err := filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // Skip paths with errors
@@ -63,7 +70,7 @@ func DetectNodeApps(projectDir string) ([]NodeApp, error) {
 			return nil
 		}
 
-		// Skip if path is the project root (we'll check it separately)
+		// Skip if path is the project root (already checked)
 		if relPath == "." {
 			return nil
 		}
@@ -96,12 +103,6 @@ func DetectNodeApps(projectDir string) ([]NodeApp, error) {
 
 	if err != nil {
 		return nil, err
-	}
-
-	// Also check the root directory
-	rootApp := detectNodeAppInDir(projectDir, projectDir, portCounter)
-	if rootApp != nil {
-		apps = append(apps, *rootApp)
 	}
 
 	return apps, nil
@@ -300,23 +301,31 @@ func CreateNodeSystemdService(app NodeApp, domain, webroot, adminUser string) er
 	serviceName := fmt.Sprintf("node-%s", domain)
 	serviceFile := fmt.Sprintf("/etc/systemd/system/%s.service", serviceName)
 
+	// Get npm path
+	npmPath, err := utils.RunCommand("which", "npm")
+	if err != nil {
+		npmPath = "/usr/bin/npm" // fallback
+	} else {
+		npmPath = strings.TrimSpace(npmPath)
+	}
+
 	// Determine start command based on framework
 	var execCmd string
 	switch app.Type {
 	case "next":
-		execCmd = "/usr/bin/npm run start"
+		execCmd = fmt.Sprintf("%s run start", npmPath)
 	case "nuxt":
-		execCmd = "/usr/bin/npm run start"
+		execCmd = fmt.Sprintf("%s run start", npmPath)
 	case "svelte":
-		execCmd = "/usr/bin/npm run preview"
+		execCmd = fmt.Sprintf("%s run preview", npmPath)
 	case "astro":
-		execCmd = "/usr/bin/npm run preview"
+		execCmd = fmt.Sprintf("%s run preview", npmPath)
 	default:
-		execCmd = "/usr/bin/npm run start"
+		execCmd = fmt.Sprintf("%s run start", npmPath)
 	}
 
 	serviceContent := fmt.Sprintf(`[Unit]
-Description=Node.js application for %s
+Description=Node.js application for %s (%s)
 After=network.target
 
 [Service]
@@ -326,36 +335,73 @@ WorkingDirectory=%s
 ExecStart=%s
 Restart=always
 RestartSec=10
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=%s
 Environment=NODE_ENV=production
 Environment=PORT=%d
+Environment=HOSTNAME=0.0.0.0
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 [Install]
 WantedBy=multi-user.target
-`, domain, adminUser, appDir, execCmd, serviceName, app.Port)
+`, domain, app.Type, adminUser, appDir, execCmd, serviceName, app.Port)
 
 	// Write service file
+	utils.Log("Creating systemd service: %s", serviceFile)
 	if err := os.WriteFile(serviceFile, []byte(serviceContent), 0644); err != nil {
 		return fmt.Errorf("failed to write systemd service file: %v", err)
 	}
 
 	// Reload systemd
+	utils.Log("Reloading systemd daemon...")
 	if _, err := utils.RunCommand("systemctl", "daemon-reload"); err != nil {
 		return fmt.Errorf("failed to reload systemd: %v", err)
 	}
 
+	// Stop service if already running
+	utils.RunCommand("systemctl", "stop", serviceName) // Ignore errors
+
 	// Enable and start service
+	utils.Log("Enabling service %s...", serviceName)
 	if _, err := utils.RunCommand("systemctl", "enable", serviceName); err != nil {
 		return fmt.Errorf("failed to enable service: %v", err)
 	}
 
+	utils.Log("Starting service %s...", serviceName)
 	if _, err := utils.RunCommand("systemctl", "start", serviceName); err != nil {
 		return fmt.Errorf("failed to start service: %v", err)
 	}
 
-	utils.Ok("Systemd service %s created and started", serviceName)
+	// Wait a moment for service to initialize
+	utils.RunShell("sleep 3")
+
+	// Check service status
+	status, err := utils.RunCommand("systemctl", "is-active", serviceName)
+	statusStr := strings.TrimSpace(status)
+
+	if err != nil || statusStr != "active" {
+		// Service may not have started - get details
+		utils.Warn("Service status: %s", statusStr)
+
+		// Get recent logs
+		logs, _ := utils.RunCommand("journalctl", "-u", serviceName, "-n", "30", "--no-pager")
+		utils.Debug("Recent service logs:")
+		utils.Debug("%s", logs)
+
+		// Get detailed status
+		detailedStatus, _ := utils.RunCommand("systemctl", "status", serviceName, "--no-pager")
+		utils.Debug("Service status:")
+		utils.Debug("%s", detailedStatus)
+
+		return fmt.Errorf("service %s failed to start (status: %s). Check logs with: journalctl -u %s -n 50", serviceName, statusStr, serviceName)
+	}
+
+	utils.Ok("Systemd service %s created and running successfully", serviceName)
+	utils.Log("  Port: %d", app.Port)
+	utils.Log("  Check status: systemctl status %s", serviceName)
+	utils.Log("  View logs: journalctl -u %s -f", serviceName)
+
 	return nil
 }
 
